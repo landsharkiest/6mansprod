@@ -10,7 +10,7 @@ const pool = new Pool({
     user: 'sixmansdb',
     host: 'database-1.ckb8wc0eyel2.us-east-1.rds.amazonaws.com',
     database: 'database-1',
-    password: 'owenis57.',
+    password: 'Owenis57.',
     port: 5432,
 });
 
@@ -47,12 +47,16 @@ initializeDatabase();
 app.post('/api/guesses', async (req, res) => {
     const { videoId, guessedRank, actualRank, isCorrect } = req.body;
     
+    console.log('Received guess:', { videoId, guessedRank, actualRank, isCorrect });
+    
     if (!videoId || !guessedRank || !actualRank) {
+        console.log('Missing required fields');
         return res.status(400).json({ error: 'missing required fields' });
     }
     
     try {
         const client = await pool.connect();
+        console.log('Connected to database');
         
         try {
             await client.query('begin');
@@ -61,6 +65,7 @@ app.post('/api/guesses', async (req, res) => {
                 'insert into clip_guesses (video_key, guessed_rank, actual_rank, is_correct) values ($1, $2, $3, $4)',
                 [videoId, guessedRank, actualRank, isCorrect]
             );
+            console.log('Inserted guess into clip_guesses');
             
             const statsResult = await client.query(
                 'select * from video_stats where video_key = $1',
@@ -75,25 +80,29 @@ app.post('/api/guesses', async (req, res) => {
                      where video_key = $2`,
                     [isCorrect ? 1 : 0, videoId]
                 );
+                console.log('Updated existing stats');
             } else {
                 await client.query(
                     `insert into video_stats (video_key, rank, total_guesses, correct_guesses)
                      values ($1, $2, 1, $3)`,
                     [videoId, actualRank, isCorrect ? 1 : 0]
                 );
+                console.log('Inserted new stats');
             }
             
             await client.query('commit');
+            console.log('Transaction committed successfully');
             res.status(200).json({ message: 'guess recorded' });
         } catch (error) {
             await client.query('rollback');
+            console.error('Database error (rolling back):', error.message);
             throw error;
         } finally {
             client.release();
         }
     } catch (error) {
-        console.error('error recording guess:', error);
-        res.status(500).json({ error: 'failed to record guess' });
+        console.error('Error recording guess:', error);
+        res.status(500).json({ error: 'failed to record guess', details: error.message });
     }
 });
 
@@ -188,4 +197,8 @@ app.get('/api/stats', async (req, res) => {
 const port = process.env.port || 3001;
 app.listen(port, () => {
     console.log(`server running on port ${port}`);
+    console.log('api endpoints:');
+    console.log('- POST /api/guesses - record a new guess');
+    console.log('- GET /api/stats/video/:videoKey - get stats for a video');
+    console.log('- GET /api/stats - get overall stats');
 });

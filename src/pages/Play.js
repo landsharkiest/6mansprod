@@ -68,6 +68,8 @@ function Play() {
     if (videoKey) {
       try {
         setLoadingStats(true);
+        console.log('Sending guess to server:', { videoId: videoKey, guessedRank, actualRank, isCorrect });
+        
         const response = await fetch('/api/guesses', {
           method: 'POST',
           headers: {
@@ -81,24 +83,32 @@ function Play() {
           }),
         });
 
+        const responseData = await response.json();
+        
         if (!response.ok) {
-          throw new Error('Failed to save guess');
+          console.error('Server response:', responseData);
+          throw new Error(`Failed to save guess: ${responseData.error || 'Unknown error'}`);
         }
         
+        console.log('Guess saved successfully:', responseData);
+        
         // Fetch statistics for this video
+        console.log('Fetching stats for video:', videoKey);
         const statsResponse = await fetch(`/api/stats/video/${encodeURIComponent(videoKey)}`);
         
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
+          console.log('Received stats:', statsData);
           setGuessStats(statsData);
         } else {
-          console.error('Failed to fetch video stats');
+          const errorData = await statsResponse.json().catch(() => ({}));
+          console.error('Failed to fetch video stats:', errorData);
+          // Don't throw here, we still want to show the guess result
         }
         
         setLoadingStats(false);
-        console.log('Guess saved successfully');
       } catch (error) {
-        console.error('Error saving guess:', error);
+        console.error('Error in handleGuessSubmit:', error);
         setLoadingStats(false);
       }
     }
