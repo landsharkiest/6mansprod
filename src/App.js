@@ -15,10 +15,10 @@ function App() {
     <div className="App">
       <Routes>
         <Route
-          path="/upload"
+          path="/login"
           element={
             <div className="App">
-              <Upload />
+              <Login />
             </div>
           }
         />
@@ -28,16 +28,10 @@ function App() {
             <div className="App">
               <header className="App-header">
                 <h1>6mansdle</h1>
-                <Dropzone onDrop={(acceptedFiles) => console.log(acceptedFiles)}>
-                  {({ getRootProps, getInputProps }) => (
-                <div {...getRootProps()} className="dropzone">
                   <input {...getInputProps()} />
-                <Link to="/upload"><UploadClips /></Link>
-                </div>
-                  )}
-                </Dropzone>
+                <UploadClips />
                 <PlayGuest />
-                <LogIn />
+                <Link to="/login"><LogIn /></Link>
               </header>
             </div>
           }
@@ -74,13 +68,28 @@ function LogIn() {
 
 // Components for the uploading clips stuff
 function UploadClips() {
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      // Handle the uploaded files here
+      console.log(acceptedFiles);
+      // You can add upload logic here
+    }
+  });
+
   return (
-    <div className="Upload-clips">
-      <button className="Upload-clips-button">
-        Upload Clips from 6Mans
-      </button>
+    <div className="Upload-clips" {...getRootProps()}>
+      <input {...getInputProps()} />
+      {
+        isDragActive ? (
+          <p>Drop the clips here ...</p>
+        ) : (
+          <button className="Upload-clips-button">
+            Upload Clips from 6Mans (Click or Drag files)
+          </button>
+        )
+      }
     </div>
-  )
+  );
 }
 
 export default App;
