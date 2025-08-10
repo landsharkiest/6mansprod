@@ -112,12 +112,21 @@ function UploadClips() {
     }
   };
 
+  const [uploadError, setUploadError] = React.useState("");
+  const MAX_SIZE_MB = 50;
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'video/*': []
     },
     onDrop: (acceptedFiles) => {
-      setPendingFiles(acceptedFiles);
+      const tooLarge = acceptedFiles.filter(file => file.size > MAX_SIZE_MB * 1024 * 1024);
+      if (tooLarge.length > 0) {
+        setUploadError(`Some files are too large (max ${MAX_SIZE_MB}MB): ${tooLarge.map(f => f.name).join(", ")}`);
+        setPendingFiles([]);
+      } else {
+        setUploadError("");
+        setPendingFiles(acceptedFiles);
+      }
     }
   });
 
@@ -150,6 +159,9 @@ function UploadClips() {
           ))}
         </select>
       </div>
+      {uploadError && (
+        <div style={{ color: 'red', marginBottom: '16px' }}>{uploadError}</div>
+      )}
       {pendingFiles.length > 0 && (
         <div style={{ marginBottom: '16px' }}>
           <p>Ready to upload {pendingFiles.length} file(s) as rank <b>{selectedRank}</b>:</p>
