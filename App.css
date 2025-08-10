@@ -1,0 +1,57 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: top;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.Upload-clips-button {
+  border: none;
+  padding: 10px 20px;
+  font-size: 30px;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+  background-color: inherit;
+  transition: background-color 0.3s ease;
+  position: relative;
+  margin-top: 50%;
+}
+
+.play-guest-button {
+  border: none;
+  padding: 10px 20px;
+  font-size: 30px;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+  background-color: inherit;
+  transition: background-color 0.3s ease;
+  position: relative;
+  margin-top: 110%;
+}
+
+.Log-in-button {
+  border: none;
+  padding: 10px 20px;
+  font-size: 30px;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+  background-color: inherit;
+  transition: background-color 0.3s ease;
+  position: relative;
+  margin-top: 25%;
+}
+
+.App-link {
+  color: #61dafb;
+}
