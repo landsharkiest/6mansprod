@@ -73,8 +73,8 @@ function LogIn() {
 function UploadClips() {
   const s3 = new S3({
     region: "us-east-1",
-    accessKeyId: 'AKIA3LUYWHZLKQQ56H5L',
-    secretAccessKey: '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',
+    accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
     params: { Bucket: '6mans-clip-bucket' }
   });
 
