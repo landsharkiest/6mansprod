@@ -75,12 +75,12 @@ function UploadClips() {
     region: "us-east-1",
     accessKeyId: 'AKIA3LUYWHZLKQQ56H5L',
     secretAccessKey: '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',
-    params: { Bucket: '6mans-clips-bucket' }
+    params: { Bucket: '6mans-clip-bucket' }
   });
 
   const uploadToS3 = (file) => {
     const params = {
-      Bucket: '6mans-clips-bucket',
+      Bucket: '6mans-clip-bucket',
       Key: file.name,
       Body: file,
       ContentType: file.type
@@ -95,6 +95,9 @@ function UploadClips() {
     });
   };
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'video/*': []
+    },
     onDrop: (acceptedFiles) => {
       // Handle the uploaded files here
       console.log(acceptedFiles);
