@@ -12,6 +12,7 @@
     "aws-sdk": "^2.1692.0",
     "axios": "^1.11.0",
     "client-s3": "github:aws-sdk/client-s3",
+    "pg": "^8.16.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-dropzone": "^14.3.8",

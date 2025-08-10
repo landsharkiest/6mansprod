@@ -12,3 +12,72 @@
     align-items: center;
     justify-content: center;
 }
+
+.video-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 800px;
+    width: 90%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    background-color: #f8f9fa;
+}
+
+.video-container video {
+    width: 100%;
+    max-width: 720px;
+    border-radius: 4px;
+}
+
+.GuessRank {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.GuessRank-button {
+    margin: 0 8px 16px;
+    padding: 12px 24px;
+    font-size: 1.2em;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.GuessRank-button:hover {
+    background-color: #0b7dda;
+    transform: scale(1.05);
+}
+
+.guess-result {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .GuessRank {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .GuessRank-button {
+        margin: 5px 0;
+        width: 200px;
+    }
+    
+    .video-container video {
+        max-width: 100%;
+    }
+}
