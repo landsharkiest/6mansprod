@@ -10,12 +10,84 @@ function Play() {
 
   const [videoUrl, setVideoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showGuessRank, setShowGuessRank] = useState(false);
   const [videoKey, setVideoKey] = useState(null);
   const [actualRank, setActualRank] = useState(null);
   const [guessResult, setGuessResult] = useState(null);
   const [guessStats, setGuessStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  
+  // Helper function to store guesses locally
+  const storeGuessLocally = (videoKey, guessedRank, actualRank, isCorrect) => {
+    try {
+      // Get existing guesses from localStorage
+      const localGuessesString = localStorage.getItem('6mansGuesses') || '[]';
+      const localGuesses = JSON.parse(localGuessesString);
+      
+      // Add new guess
+      localGuesses.push({
+        videoKey,
+        guessedRank,
+        actualRank,
+        isCorrect,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Save back to localStorage
+      localStorage.setItem('6mansGuesses', JSON.stringify(localGuesses));
+      console.log('Guess saved locally');
+    } catch (error) {
+      console.error('Failed to save guess locally:', error);
+    }
+  };
+  
+  // Helper function to generate mock stats from local storage
+  const generateMockStats = (videoKey) => {
+    try {
+      const localGuessesString = localStorage.getItem('6mansGuesses') || '[]';
+      const localGuesses = JSON.parse(localGuessesString);
+      
+      // Filter guesses for this video
+      const videoGuesses = localGuesses.filter(g => g.videoKey === videoKey);
+      
+      // Count by guessed rank
+      const distribution = {};
+      videoGuesses.forEach(g => {
+        distribution[g.guessedRank] = (distribution[g.guessedRank] || 0) + 1;
+      });
+      
+      // Format distribution for the chart
+      const formattedDistribution = Object.entries(distribution).map(([guessedRank, count]) => ({
+        guessed_rank: guessedRank,
+        count
+      }));
+      
+      // Count correct guesses
+      const correctGuesses = videoGuesses.filter(g => g.isCorrect).length;
+      
+      return {
+        videoKey,
+        rank: actualRank,
+        totalGuesses: videoGuesses.length,
+        correctGuesses,
+        accuracy: videoGuesses.length > 0 
+          ? ((correctGuesses / videoGuesses.length) * 100).toFixed(2) 
+          : "0.00",
+        distribution: formattedDistribution,
+        source: 'local' // Indicate this is local data
+      };
+    } catch (error) {
+      console.error('Failed to generate mock stats:', error);
+      return {
+        videoKey,
+        rank: actualRank,
+        totalGuesses: 0,
+        correctGuesses: 0,
+        accuracy: "0.00",
+        distribution: [],
+        source: 'local'
+      };
+    }
+  };
 
   useEffect(() => {
     async function fetchVideos() {
@@ -70,40 +142,59 @@ function Play() {
         setLoadingStats(true);
         console.log('Sending guess to server:', { videoId: videoKey, guessedRank, actualRank, isCorrect });
         
-        const response = await fetch('/api/guesses', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            videoId: videoKey,
-            guessedRank,
-            actualRank,
-            isCorrect
-          }),
-        });
+        // Store guess locally regardless of server availability
+        // This ensures the user experience isn't broken even if the server is down
+        storeGuessLocally(videoKey, guessedRank, actualRank, isCorrect);
+        
+        try {
+          const SERVER_URL = 'http://localhost:3001'; // Direct server URL
+          
+          const response = await fetch(`${SERVER_URL}/api/guesses`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              videoId: videoKey,
+              guessedRank,
+              actualRank,
+              isCorrect
+            }),
+          });
 
-        const responseData = await response.json();
-        
-        if (!response.ok) {
-          console.error('Server response:', responseData);
-          throw new Error(`Failed to save guess: ${responseData.error || 'Unknown error'}`);
-        }
-        
-        console.log('Guess saved successfully:', responseData);
-        
-        // Fetch statistics for this video
-        console.log('Fetching stats for video:', videoKey);
-        const statsResponse = await fetch(`/api/stats/video/${encodeURIComponent(videoKey)}`);
-        
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
-          console.log('Received stats:', statsData);
-          setGuessStats(statsData);
-        } else {
-          const errorData = await statsResponse.json().catch(() => ({}));
-          console.error('Failed to fetch video stats:', errorData);
-          // Don't throw here, we still want to show the guess result
+          // Safely parse JSON response
+          const responseData = await response.json();
+          
+          if (response.ok) {
+            console.log('Guess saved successfully:', responseData);
+            
+            // Try to fetch statistics for this video
+            try {
+              console.log('Fetching stats for video:', videoKey);
+              const statsResponse = await fetch(`${SERVER_URL}/api/stats/video/${encodeURIComponent(videoKey)}`);
+              
+              if (statsResponse.ok) {
+                const statsData = await statsResponse.json();
+                console.log('Received stats:', statsData);
+                setGuessStats(statsData);
+              }
+            } catch (statsError) {
+              console.error('Error fetching stats (server might be down):', statsError);
+              // Generate mock stats from local storage as fallback
+              const mockStats = generateMockStats(videoKey);
+              setGuessStats(mockStats);
+            }
+          } else {
+            console.error('Server response error:', responseData);
+            // Generate mock stats from local storage as fallback
+            const mockStats = generateMockStats(videoKey);
+            setGuessStats(mockStats);
+          }
+        } catch (serverError) {
+          console.error('Server connection error (likely server is down):', serverError);
+          // Generate mock stats from local storage as fallback
+          const mockStats = generateMockStats(videoKey);
+          setGuessStats(mockStats);
         }
         
         setLoadingStats(false);
@@ -116,7 +207,6 @@ function Play() {
 
   const handlePlayAgain = () => {
     setGuessResult(null);
-    setShowGuessRank(false);
     setLoading(true);
     setVideoUrl(null);
     setGuessStats(null);
@@ -169,13 +259,12 @@ function Play() {
             width="720"
             controls
             autoPlay
-            onEnded={() => setShowGuessRank(true)}
           >
             <source src={videoUrl} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
           
-          {showGuessRank && !guessResult && (
+          {!guessResult && (
             <GuessRank onGuess={handleGuessSubmit} />
           )}
           
@@ -192,6 +281,11 @@ function Play() {
               ) : guessStats ? (
                 <div className="stats-container">
                   <h3>Guess Distribution</h3>
+                  {guessStats.source === 'local' && (
+                    <p style={{ color: 'orange', fontSize: '0.9em', fontStyle: 'italic' }}>
+                      Server unavailable - showing local data only
+                    </p>
+                  )}
                   <GuessDistribution stats={guessStats} />
                   <p>Total guesses: {guessStats.totalGuesses}</p>
                   <p>Correct percentage: {guessStats.accuracy}%</p>
@@ -200,16 +294,7 @@ function Play() {
               
               <button 
                 onClick={handlePlayAgain}
-                style={{ 
-                  margin: '20px 0', 
-                  padding: '12px 24px', 
-                  fontSize: '1.2em',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
+                className="play-again-button"
               >
                 Play Another Clip
               </button>

@@ -3,14 +3,12 @@
     min-height: 100vh;
     width: 100vw;
     margin: 0;
-    padding: 0;
-    position: fixed;
-    top: 0;
-    left: 0;
+    padding: 20px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    overflow-y: auto;
 }
 
 .video-container {
@@ -23,6 +21,9 @@
     border-radius: 8px;
     padding: 20px;
     background-color: #f8f9fa;
+    margin: 20px 0;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
 }
 
 .video-container video {
@@ -64,6 +65,9 @@
     width: 100%;
     max-width: 500px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .stats-container {
@@ -73,6 +77,8 @@
     background-color: #f0f0f0;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 .guess-distribution {
@@ -113,7 +119,36 @@
     color: #666;
 }
 
+.play-again-button {
+    margin: 20px 0;
+    padding: 12px 24px;
+    font-size: 1.2em;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    z-index: 100;
+    position: sticky;
+    bottom: 0;
+}
+
+.play-again-button:hover {
+    background-color: #45a049;
+}
+
 @media (max-width: 768px) {
+    .Play {
+        padding: 10px 0;
+    }
+    
+    .video-container {
+        width: 95%;
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
     .GuessRank {
         flex-direction: column;
         align-items: center;
@@ -126,5 +161,20 @@
     
     .video-container video {
         max-width: 100%;
+    }
+    
+    .stats-container {
+        max-height: 250px;
+        padding: 10px;
+    }
+    
+    .distribution-row {
+        margin: 6px 0;
+        height: 28px;
+    }
+    
+    .rank-label {
+        width: 35px;
+        margin-right: 8px;
     }
 }

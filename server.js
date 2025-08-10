@@ -6,6 +6,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Configure proper error handling for Express
+app.use((err, req, res, next) => {
+  console.error('Express error handler:', err);
+  res.status(500).json({ 
+    error: 'Server error', 
+    message: err.message || 'Unknown error',
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack
+  });
+});
+
 // In-memory fallback store for testing
 const inMemoryStore = {
     guesses: [],
