@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-identity';
 import './Play.css';
+
 function Play() {
   const REGION = "us-east-1";
   const BUCKET = "6mans-clip-bucket";
@@ -13,6 +14,8 @@ function Play() {
   const [videoKey, setVideoKey] = useState(null);
   const [actualRank, setActualRank] = useState(null);
   const [guessResult, setGuessResult] = useState(null);
+  const [guessStats, setGuessStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     async function fetchVideos() {
@@ -64,6 +67,7 @@ function Play() {
     // Save the guess to the database
     if (videoKey) {
       try {
+        setLoadingStats(true);
         const response = await fetch('http://localhost:3001/api/guesses', {
           method: 'POST',
           headers: {
@@ -81,9 +85,21 @@ function Play() {
           throw new Error('Failed to save guess');
         }
         
+        // Fetch statistics for this video
+        const statsResponse = await fetch(`http://localhost:3001/api/stats/video/${encodeURIComponent(videoKey)}`);
+        
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setGuessStats(statsData);
+        } else {
+          console.error('Failed to fetch video stats');
+        }
+        
+        setLoadingStats(false);
         console.log('Guess saved successfully');
       } catch (error) {
         console.error('Error saving guess:', error);
+        setLoadingStats(false);
       }
     }
   };
@@ -93,6 +109,7 @@ function Play() {
     setShowGuessRank(false);
     setLoading(true);
     setVideoUrl(null);
+    setGuessStats(null);
     
     // Fetch a new random video
     async function fetchVideos() {
@@ -159,6 +176,18 @@ function Play() {
               </h2>
               <p>You guessed: {guessResult.guessedRank}</p>
               <p>Actual rank: {guessResult.actualRank}</p>
+              
+              {loadingStats ? (
+                <p>Loading statistics...</p>
+              ) : guessStats ? (
+                <div className="stats-container">
+                  <h3>Guess Distribution</h3>
+                  <GuessDistribution stats={guessStats} />
+                  <p>Total guesses: {guessStats.totalGuesses}</p>
+                  <p>Correct percentage: {guessStats.accuracy}%</p>
+                </div>
+              ) : null}
+              
               <button 
                 onClick={handlePlayAgain}
                 style={{ 
@@ -211,6 +240,81 @@ function GuessRank({ onGuess }) {
           {rank}
         </button>
       ))}
+    </div>
+  );
+}
+
+function GuessDistribution({ stats }) {
+  // Get all possible ranks
+  const allRanks = ["S", "X", "A", "B+", "B", "C", "D", "E", "H"];
+  
+  // Create a map of all ranks with counts (including zeros for ranks with no guesses)
+  const distributionMap = {};
+  allRanks.forEach(rank => {
+    distributionMap[rank] = 0;
+  });
+  
+  // Fill in the actual counts
+  if (stats.distribution) {
+    stats.distribution.forEach(item => {
+      distributionMap[item.guessed_rank] = parseInt(item.count);
+    });
+  }
+  
+  // Calculate the highest count for scaling
+  const maxCount = Math.max(...Object.values(distributionMap), 1);
+  
+  // Generate bar colors based on the actual rank
+  const getBarColor = (rank) => {
+    if (rank === stats.rank) {
+      return '#4CAF50'; // Green for correct rank
+    }
+    return '#2196F3'; // Blue for other ranks
+  };
+  
+  return (
+    <div className="guess-distribution">
+      {allRanks.map(rank => {
+        const count = distributionMap[rank] || 0;
+        const percentage = stats.totalGuesses > 0 
+          ? Math.round((count / stats.totalGuesses) * 100) 
+          : 0;
+        const barWidth = Math.max((percentage / 100) * 100, percentage > 0 ? 5 : 0); // Minimum 5% width if there are any guesses
+        
+        return (
+          <div key={rank} className="distribution-row" style={{ display: 'flex', alignItems: 'center', margin: '4px 0' }}>
+            <div className="rank-label" style={{ width: '40px', textAlign: 'right', marginRight: '10px' }}>
+              {rank}
+            </div>
+            <div 
+              className="bar" 
+              style={{ 
+                width: `${barWidth}%`, 
+                backgroundColor: getBarColor(rank),
+                height: '24px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                color: 'white',
+                paddingRight: '8px',
+                transition: 'width 1s ease-in-out',
+                minWidth: count > 0 ? '40px' : '0',
+                position: 'relative'
+              }}
+            >
+              {count > 0 && (
+                <span style={{ position: 'absolute', right: '8px' }}>
+                  {percentage}%
+                </span>
+              )}
+            </div>
+            <div className="count-label" style={{ marginLeft: '10px', minWidth: '30px' }}>
+              {count}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
