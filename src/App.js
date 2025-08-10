@@ -5,8 +5,11 @@ import Upload from './pages/Upload';
 import Login from './pages/Login';
 import Play from './pages/Play';
 import { useDropzone } from 'react-dropzone';
+import AWS from 'aws-sdk';
+import S3 from 'aws-sdk/clients/s3';
 
 function App() {
+  
 
   const { getRootProps, getInputProps } = useDropzone();
 
@@ -68,10 +71,34 @@ function LogIn() {
 
 // Components for the uploading clips stuff
 function UploadClips() {
+  const s3 = new S3({
+    region: "us-east-1",
+    accessKeyId: 'AKIA3LUYWHZLKQQ56H5L',
+    secretAccessKey: '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',
+    params: { Bucket: '6mans-clips-bucket' }
+  });
+
+  const uploadToS3 = (file) => {
+    const params = {
+      Bucket: '6mans-clips-bucket',
+      Key: file.name,
+      Body: file,
+      ContentType: file.type
+    };
+
+    s3.upload(params, (err, data) => {
+      if (err) {
+        console.error("Error uploading file:", err);
+      } else {
+        console.log("File uploaded successfully:", data);
+      }
+    });
+  };
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (acceptedFiles) => {
       // Handle the uploaded files here
       console.log(acceptedFiles);
+      acceptedFiles.forEach(uploadToS3)
       // You can add upload logic here
     }
   });
