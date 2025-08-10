@@ -1,0 +1,43 @@
+{
+  "api": {
+    "6mansapi": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "6mansprod1"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "API Gateway"
+    }
+  },
+  "function": {
+    "6mansprod1": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_function_6mansprod1_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "6mansprod1"
+        }
+      ]
+    },
+    "AMPLIFY_function_6mansprod1_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "6mansprod1"
+        }
+      ]
+    }
+  }
+}

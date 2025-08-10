@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "paths": {
+    "/server": {
+      "name": "/server",
+      "lambdaFunction": "6mansprod1",
+      "permissions": {
+        "setting": "open"
+      }
+    }
+  }
+}
