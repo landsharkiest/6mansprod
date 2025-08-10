@@ -6,7 +6,7 @@ import './Play.css';
 function Play() {
   const REGION = "us-east-1";
   const BUCKET = "6mans-clip-bucket";
-  const IDENTITY_POOL_ID = "us-east-1:21355927-0f08-488d-9e3c-446b36007857"; // pool id from AWS Cognito
+  const IDENTITY_POOL_ID = "us-east-1:21355927-0f08-488d-9e3c-446b36007857";
 
   const [videoUrl, setVideoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,80 +15,34 @@ function Play() {
   const [guessResult, setGuessResult] = useState(null);
   const [guessStats, setGuessStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [isDatabaseConnected, setIsDatabaseConnected] = useState(true);
   
-  // Helper function to store guesses locally
+  // store guess locally and delete after successful server save
   const storeGuessLocally = (videoKey, guessedRank, actualRank, isCorrect) => {
     try {
-      // Get existing guesses from localStorage
-      const localGuessesString = localStorage.getItem('6mansGuesses') || '[]';
-      const localGuesses = JSON.parse(localGuessesString);
-      
-      // Add new guess
-      localGuesses.push({
+      const localGuess = {
         videoKey,
         guessedRank,
         actualRank,
         isCorrect,
         timestamp: new Date().toISOString()
-      });
-      
-      // Save back to localStorage
-      localStorage.setItem('6mansGuesses', JSON.stringify(localGuesses));
-      console.log('Guess saved locally');
+      };
+      localStorage.setItem('pendingGuess', JSON.stringify(localGuess));
     } catch (error) {
       console.error('Failed to save guess locally:', error);
     }
   };
-  
-  // Helper function to generate mock stats from local storage
-  const generateMockStats = (videoKey) => {
+
+  // delete local guess after successful server save
+  const deleteLocalGuess = () => {
     try {
-      const localGuessesString = localStorage.getItem('6mansGuesses') || '[]';
-      const localGuesses = JSON.parse(localGuessesString);
-      
-      // Filter guesses for this video
-      const videoGuesses = localGuesses.filter(g => g.videoKey === videoKey);
-      
-      // Count by guessed rank
-      const distribution = {};
-      videoGuesses.forEach(g => {
-        distribution[g.guessedRank] = (distribution[g.guessedRank] || 0) + 1;
-      });
-      
-      // Format distribution for the chart
-      const formattedDistribution = Object.entries(distribution).map(([guessedRank, count]) => ({
-        guessed_rank: guessedRank,
-        count
-      }));
-      
-      // Count correct guesses
-      const correctGuesses = videoGuesses.filter(g => g.isCorrect).length;
-      
-      return {
-        videoKey,
-        rank: actualRank,
-        totalGuesses: videoGuesses.length,
-        correctGuesses,
-        accuracy: videoGuesses.length > 0 
-          ? ((correctGuesses / videoGuesses.length) * 100).toFixed(2) 
-          : "0.00",
-        distribution: formattedDistribution,
-        source: 'local' // Indicate this is local data
-      };
+      localStorage.removeItem('pendingGuess');
     } catch (error) {
-      console.error('Failed to generate mock stats:', error);
-      return {
-        videoKey,
-        rank: actualRank,
-        totalGuesses: 0,
-        correctGuesses: 0,
-        accuracy: "0.00",
-        distribution: [],
-        source: 'local'
-      };
+      console.error('Failed to delete local guess:', error);
     }
   };
-
+  
+  
   useEffect(() => {
     async function fetchVideos() {
       const s3Client = new S3Client({
@@ -109,7 +63,7 @@ function Play() {
           const randomIndex = Math.floor(Math.random() * files.length);
           const randomFile = files[randomIndex].Key;
           
-          // Extract the rank from the filename (assuming format like "S_filename.mp4")
+          // extract rank from filename format like "S_filename.mp4"
           const filenameParts = randomFile.split('/');
           const filename = filenameParts[filenameParts.length - 1];
           const rank = filename.split('_')[0];
@@ -128,7 +82,7 @@ function Play() {
   }, []);
 
   const handleGuessSubmit = async (guessedRank) => {
-    // Compare the guessed rank with the actual rank
+    // compare guessed rank with actual rank
     const isCorrect = guessedRank === actualRank;
     setGuessResult({
       correct: isCorrect,
@@ -136,72 +90,55 @@ function Play() {
       actualRank
     });
 
-    // Save the guess to the database
+    // save guess locally first
     if (videoKey) {
+      storeGuessLocally(videoKey, guessedRank, actualRank, isCorrect);
+      
       try {
         setLoadingStats(true);
-        console.log('Sending guess to server:', { videoId: videoKey, guessedRank, actualRank, isCorrect });
+        const SERVER_URL = 'http://localhost:3001';
         
-        // Store guess locally regardless of server availability
-        // This ensures the user experience isn't broken even if the server is down
-        storeGuessLocally(videoKey, guessedRank, actualRank, isCorrect);
-        
-        try {
-          const SERVER_URL = 'http://localhost:3001'; // Direct server URL
-          
-          const response = await fetch(`${SERVER_URL}/api/guesses`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              videoId: videoKey,
-              guessedRank,
-              actualRank,
-              isCorrect
-            }),
-          });
+        const response = await fetch(`${SERVER_URL}/api/guesses`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            videoId: videoKey,
+            guessedRank,
+            actualRank,
+            isCorrect
+          }),
+        });
 
-          // Safely parse JSON response
-          const responseData = await response.json();
-          
-          if (response.ok) {
-            console.log('Guess saved successfully:', responseData);
-            
-            // Try to fetch statistics for this video
-            try {
-              console.log('Fetching stats for video:', videoKey);
-              const statsResponse = await fetch(`${SERVER_URL}/api/stats/video/${encodeURIComponent(videoKey)}`);
-              
-              if (statsResponse.ok) {
-                const statsData = await statsResponse.json();
-                console.log('Received stats:', statsData);
-                setGuessStats(statsData);
-              }
-            } catch (statsError) {
-              console.error('Error fetching stats (server might be down):', statsError);
-              // Generate mock stats from local storage as fallback
-              const mockStats = generateMockStats(videoKey);
-              setGuessStats(mockStats);
-            }
-          } else {
-            console.error('Server response error:', responseData);
-            // Generate mock stats from local storage as fallback
-            const mockStats = generateMockStats(videoKey);
-            setGuessStats(mockStats);
-          }
-        } catch (serverError) {
-          console.error('Server connection error (likely server is down):', serverError);
-          // Generate mock stats from local storage as fallback
-          const mockStats = generateMockStats(videoKey);
-          setGuessStats(mockStats);
-        }
+        const responseData = await response.json();
         
-        setLoadingStats(false);
-      } catch (error) {
-        console.error('Error in handleGuessSubmit:', error);
-        setLoadingStats(false);
+        if (response.ok) {
+          // delete local guess after successful server save
+          deleteLocalGuess();
+          setIsDatabaseConnected(true);
+          
+          // fetch statistics for this video
+          try {
+            const statsResponse = await fetch(`${SERVER_URL}/api/stats/video/${encodeURIComponent(videoKey)}`);
+            
+            if (statsResponse.ok) {
+              const statsData = await statsResponse.json();
+              setGuessStats(statsData);
+            }
+          } catch (statsError) {
+            console.error('Error fetching stats:', statsError);
+          }
+        } else {
+          console.error('Server response error:', responseData);
+          setIsDatabaseConnected(false);
+        }
+      } catch (serverError) {
+        console.error('Server connection error:', serverError);
+        setIsDatabaseConnected(false);
       }
+      
+      setLoadingStats(false);
     }
   };
 
@@ -210,8 +147,9 @@ function Play() {
     setLoading(true);
     setVideoUrl(null);
     setGuessStats(null);
+    setIsDatabaseConnected(true);
     
-    // Fetch a new random video
+    // fetch new random video
     async function fetchVideos() {
       const s3Client = new S3Client({
         region: REGION,
@@ -231,7 +169,7 @@ function Play() {
           const randomIndex = Math.floor(Math.random() * files.length);
           const randomFile = files[randomIndex].Key;
           
-          // Extract the rank from the filename
+          // extract rank from filename
           const filenameParts = randomFile.split('/');
           const filename = filenameParts[filenameParts.length - 1];
           const rank = filename.split('_')[0];
@@ -276,21 +214,24 @@ function Play() {
               <p>You guessed: {guessResult.guessedRank}</p>
               <p>Actual rank: {guessResult.actualRank}</p>
               
-              {loadingStats ? (
+              {isDatabaseConnected && loadingStats && (
                 <p>Loading statistics...</p>
-              ) : guessStats ? (
+              )}
+              
+              {isDatabaseConnected && guessStats && (
                 <div className="stats-container">
                   <h3>Guess Distribution</h3>
-                  {guessStats.source === 'local' && (
-                    <p style={{ color: 'orange', fontSize: '0.9em', fontStyle: 'italic' }}>
-                      Server unavailable - showing local data only
-                    </p>
-                  )}
                   <GuessDistribution stats={guessStats} />
                   <p>Total guesses: {guessStats.totalGuesses}</p>
                   <p>Correct percentage: {guessStats.accuracy}%</p>
                 </div>
-              ) : null}
+              )}
+              
+              {!isDatabaseConnected && (
+                <p style={{ color: 'orange', fontSize: '0.9em', fontStyle: 'italic' }}>
+                  Database unavailable - guess saved locally
+                </p>
+              )}
               
               <button 
                 onClick={handlePlayAgain}
@@ -340,31 +281,31 @@ function GuessRank({ onGuess }) {
 }
 
 function GuessDistribution({ stats }) {
-  // Get all possible ranks
+  // get all possible ranks
   const allRanks = ["S", "X", "A", "B+", "B", "C", "D", "E", "H"];
   
-  // Create a map of all ranks with counts (including zeros for ranks with no guesses)
+  // create map of all ranks with counts
   const distributionMap = {};
   allRanks.forEach(rank => {
     distributionMap[rank] = 0;
   });
   
-  // Fill in the actual counts
+  // fill in actual counts
   if (stats.distribution) {
     stats.distribution.forEach(item => {
       distributionMap[item.guessed_rank] = parseInt(item.count);
     });
   }
   
-  // Calculate the highest count for scaling
+  // calculate highest count for scaling
   const maxCount = Math.max(...Object.values(distributionMap), 1);
   
-  // Generate bar colors based on the actual rank
+  // generate bar colors based on actual rank
   const getBarColor = (rank) => {
     if (rank === stats.rank) {
-      return '#4CAF50'; // Green for correct rank
+      return '#4CAF50'; // green for correct rank
     }
-    return '#2196F3'; // Blue for other ranks
+    return '#2196F3'; // blue for other ranks
   };
   
   return (
@@ -374,7 +315,7 @@ function GuessDistribution({ stats }) {
         const percentage = stats.totalGuesses > 0 
           ? Math.round((count / stats.totalGuesses) * 100) 
           : 0;
-        const barWidth = Math.max((percentage / 100) * 100, percentage > 0 ? 5 : 0); // Minimum 5% width if there are any guesses
+        const barWidth = Math.max((percentage / 100) * 100, percentage > 0 ? 5 : 0); // minimum 5% width if there are guesses
         
         return (
           <div key={rank} className="distribution-row" style={{ display: 'flex', alignItems: 'center', margin: '4px 0' }}>
