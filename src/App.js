@@ -7,6 +7,7 @@ import Play from './pages/Play';
 import { useDropzone } from 'react-dropzone';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-identity';
+import React from 'react';
 
 function App() {
   
@@ -80,10 +81,13 @@ function LogIn() {
 
 // Components for the uploading clips stuff
 function UploadClips() {
-  // Replace with your actual Cognito Identity Pool ID
   const REGION = "us-east-1";
   const BUCKET = "6mans-clip-bucket";
-  const IDENTITY_POOL_ID = "us-east-1:21355927-0f08-488d-9e3c-446b36007857"; // <-- update this
+  const IDENTITY_POOL_ID = "us-east-1:21355927-0f08-488d-9e3c-446b36007857";
+
+  const ranks = ["S", "X", "A", "B+", "B", "C", "D", "E", "H"];
+  const [selectedRank, setSelectedRank] = React.useState(ranks[0]);
+  const [pendingFiles, setPendingFiles] = React.useState([]);
 
   const s3Client = new S3Client({
     region: REGION,
@@ -93,11 +97,11 @@ function UploadClips() {
     }),
   });
 
-  const uploadToS3 = async (file) => {
+  const uploadToS3 = async (file, rank) => {
     const params = {
       Bucket: BUCKET,
-      Key: file.name,
-      Body: await file.arrayBuffer(), // Convert to ArrayBuffer
+      Key: `${rank}_${file.name}`,
+      Body: await file.arrayBuffer(),
       ContentType: file.type,
     };
     try {
@@ -107,30 +111,56 @@ function UploadClips() {
       console.error("Error uploading file:", err);
     }
   };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'video/*': []
     },
     onDrop: (acceptedFiles) => {
-      // Handle the uploaded files here
-      console.log(acceptedFiles);
-      acceptedFiles.forEach(uploadToS3)
-      // You can add upload logic here
+      setPendingFiles(acceptedFiles);
     }
   });
 
+  const handleUpload = () => {
+    pendingFiles.forEach(file => uploadToS3(file, selectedRank));
+    setPendingFiles([]);
+  };
+
   return (
-    <div className="Upload-clips" {...getRootProps()}>
-      <input {...getInputProps()} />
-      {
-        isDragActive ? (
+    <div className="Upload-clips" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div {...getRootProps()} style={{ marginBottom: '8px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <input {...getInputProps()} />
+        {isDragActive ? (
           <p>Drop the clips here ...</p>
         ) : (
           <button className="Upload-clips-button">
             Upload Clips from 6Mans (Click or Drag files)
           </button>
-        )
-      }
+        )}
+      </div>
+      <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+        <label htmlFor="rank-select">Select Rank:</label>
+        <select
+          id="rank-select"
+          value={selectedRank}
+          onChange={e => setSelectedRank(e.target.value)}
+        >
+          {ranks.map(rank => (
+            <option key={rank} value={rank}>{rank}</option>
+          ))}
+        </select>
+      </div>
+      {pendingFiles.length > 0 && (
+        <div style={{ marginBottom: '16px' }}>
+          <p>Ready to upload {pendingFiles.length} file(s) as rank <b>{selectedRank}</b>:</p>
+          <ul>
+            {pendingFiles.map(file => (
+              <li key={file.name}>{file.name}</li>
+            ))}
+          </ul>
+          <button onClick={handleUpload} className="Upload-clips-button">Confirm Upload</button>
+        </div>
+      )}
     </div>
   );
 }

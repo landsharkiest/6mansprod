@@ -9,6 +9,7 @@ function Play() {
 
   const [videoUrl, setVideoUrl] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showGuessRank, setShowGuessRank] = useState(false);
 
   useEffect(() => {
     async function fetchVideos() {
@@ -44,13 +45,38 @@ function Play() {
       {loading ? (
         <p>Loading...</p>
       ) : videoUrl ? (
-        <video width="480" controls autoPlay>
-          <source src={videoUrl} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        <>
+          <video
+            width="480"
+            controls
+            autoPlay
+            onEnded={() => setShowGuessRank(true)}
+          >
+            <source src={videoUrl} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          {showGuessRank && <GuessRank />}
+        </>
       ) : (
         <p>No verified videos found.</p>
       )}
+    </div>
+  );
+}
+
+function GuessRank() {
+  const ranks = ["S", "X", "A", "B+", "B", "C", "D", "E", "H"];
+  return (
+    <div className="GuessRank" style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+      {ranks.map(rank => (
+        <button
+          key={rank}
+          className="GuessRank-button"
+          style={{ margin: '0 8px', padding: '12px 24px', fontSize: '1.2em' }}
+        >
+          {rank}
+        </button>
+      ))}
     </div>
   );
 }
