@@ -68,7 +68,7 @@ function Play() {
     if (videoKey) {
       try {
         setLoadingStats(true);
-        const response = await fetch('http://localhost:3001/api/guesses', {
+        const response = await fetch('/api/guesses', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ function Play() {
         }
         
         // Fetch statistics for this video
-        const statsResponse = await fetch(`http://localhost:3001/api/stats/video/${encodeURIComponent(videoKey)}`);
+        const statsResponse = await fetch(`/api/stats/video/${encodeURIComponent(videoKey)}`);
         
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
