@@ -1,6 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
 import Upload from './pages/Upload';
 import Login from './pages/Login';
 import Play from './pages/Play';
@@ -22,6 +22,14 @@ function App() {
           element={
             <div className="App">
               <Login />
+            </div>
+          }
+        />
+        <Route
+          path="/play"
+          element={
+            <div className="App">
+              <Play />
             </div>
           }
         />
@@ -48,13 +56,14 @@ function App() {
 
 // Components for the guest play stuff
 function PlayGuest() {
+  const navigate = useNavigate();
   return (
     <div className="Guest-play">
-      <button className="play-guest-button">
+      <button className="play-guest-button" onClick={() => navigate('/play')}>
         Play as Guest
       </button>
     </div>
-  )
+  );
 }
 
 
@@ -88,7 +97,7 @@ function UploadClips() {
     const params = {
       Bucket: BUCKET,
       Key: file.name,
-      Body: file,
+      Body: await file.arrayBuffer(), // Convert to ArrayBuffer
       ContentType: file.type,
     };
     try {
