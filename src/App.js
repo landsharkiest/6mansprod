@@ -5,8 +5,8 @@ import Upload from './pages/Upload';
 import Login from './pages/Login';
 import Play from './pages/Play';
 import { useDropzone } from 'react-dropzone';
-import AWS from 'aws-sdk';
-import S3 from 'aws-sdk/clients/s3';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-identity';
 
 function App() {
   
@@ -71,28 +71,32 @@ function LogIn() {
 
 // Components for the uploading clips stuff
 function UploadClips() {
-  const s3 = new S3({
-    region: "us-east-1",
-    accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.REACT_APP_AWS_SECRET_ACCESS_KEY,
-    params: { Bucket: '6mans-clip-bucket' }
+  // Replace with your actual Cognito Identity Pool ID
+  const REGION = "us-east-1";
+  const BUCKET = "6mans-clip-bucket";
+  const IDENTITY_POOL_ID = "us-east-1:21355927-0f08-488d-9e3c-446b36007857"; // <-- update this
+
+  const s3Client = new S3Client({
+    region: REGION,
+    credentials: fromCognitoIdentityPool({
+      clientConfig: { region: REGION },
+      identityPoolId: IDENTITY_POOL_ID,
+    }),
   });
 
-  const uploadToS3 = (file) => {
+  const uploadToS3 = async (file) => {
     const params = {
-      Bucket: '6mans-clip-bucket',
+      Bucket: BUCKET,
       Key: file.name,
       Body: file,
-      ContentType: file.type
+      ContentType: file.type,
     };
-
-    s3.upload(params, (err, data) => {
-      if (err) {
-        console.error("Error uploading file:", err);
-      } else {
-        console.log("File uploaded successfully:", data);
-      }
-    });
+    try {
+      const data = await s3Client.send(new PutObjectCommand(params));
+      console.log("File uploaded successfully:", data);
+    } catch (err) {
+      console.error("Error uploading file:", err);
+    }
   };
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
