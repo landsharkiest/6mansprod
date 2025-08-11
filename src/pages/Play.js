@@ -177,8 +177,8 @@ function Play() {
           
           setActualRank(rank);
           setVideoKey(randomFile);
-          const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${randomFile}`;
-          setVideoUrl(url);
+            const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(randomFile)}`;
+            setVideoUrl(url);
         }
       } catch (err) {
         console.error('Error fetching videos:', err);
