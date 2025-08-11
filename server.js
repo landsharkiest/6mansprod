@@ -93,6 +93,11 @@ async function initializeDatabase() {
 
 initializeDatabase();
 
+// Root route for health checks
+app.get('/', (req, res) => {
+    res.json({ status: 'Server is running', message: 'API endpoints available at /api/*' });
+});
+
 app.post('/api/guesses', async (req, res) => {
     const { videoId, guessedRank, actualRank, isCorrect } = req.body;
     
