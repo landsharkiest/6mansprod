@@ -6,7 +6,9 @@ const app = express();
 app.use(express.json());
 app.use(cors({
     origin: 'https://6mansdle.com',
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // Configure proper error handling for Express
@@ -74,6 +76,14 @@ async function initializeDatabase() {
 }
 
 initializeDatabase();
+
+// Handle preflight requests
+app.options('*', cors({
+    origin: 'https://6mansdle.com',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 app.post('/api/guesses', async (req, res) => {
     const { videoId, guessedRank, actualRank, isCorrect } = req.body;
