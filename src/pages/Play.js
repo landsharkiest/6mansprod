@@ -201,16 +201,24 @@ function Play() {
           style={{ 
             display: 'inline-block',
             padding: '10px 20px',
-            backgroundColor: '#2196F3',
+            backgroundColor: 'inherit',
             color: 'white',
             textDecoration: 'none',
-            borderRadius: '4px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            transition: 'background-color 0.3s'
+            borderRadius: '5px',
+            fontSize: '24px',
+            fontWeight: 'normal',
+            transition: 'background-color 0.3s ease, transform 0.2s ease',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = '#0b7dda'}
-          onMouseOut={(e) => e.target.style.backgroundColor = '#2196F3'}
+          onMouseOver={(e) => {
+            e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            e.target.style.transform = 'translateY(-1px)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.backgroundColor = 'inherit';
+            e.target.style.transform = 'translateY(0)';
+          }}
         >
           🏠 Home
         </Link>
