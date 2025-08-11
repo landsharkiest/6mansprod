@@ -31,7 +31,7 @@ let useInMemoryStore = false;
 const pool = new Pool({
     user: 'sixmansdb',
     host: 'database-1.ckb8wc0eyel2.us-east-1.rds.amazonaws.com',
-    database: 'database-1',
+    database: 'postgres',
     password: 'Owenis57.',
     port: 5432,
 });
