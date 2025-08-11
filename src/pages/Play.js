@@ -17,6 +17,7 @@ function Play() {
   const [guessStats, setGuessStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [isDatabaseConnected, setIsDatabaseConnected] = useState(true);
+  const [previousClip, setPreviousClip] = useState(null);
   
   // store guess locally and delete after successful server save
   const storeGuessLocally = (videoKey, guessedRank, actualRank, isCorrect) => {
@@ -61,17 +62,24 @@ function Play() {
         const data = await s3Client.send(command);
         const files = (data.Contents || []).filter(obj => obj.Key.endsWith('.mp4') || obj.Key.endsWith('.webm') || obj.Key.endsWith('.mov'));
         if (files.length > 0) {
-          const randomIndex = Math.floor(Math.random() * files.length);
-          const randomFile = files[randomIndex].Key;
+          // Filter out the previous clip to avoid back-to-back repeats
+          const availableFiles = files.filter(file => file.Key !== previousClip);
+          
+          // If only one clip exists or all filtered out, use all files
+          const filesToChooseFrom = availableFiles.length > 0 ? availableFiles : files;
+          
+          const randomIndex = Math.floor(Math.random() * filesToChooseFrom.length);
+          const selectedFile = filesToChooseFrom[randomIndex];
           
           // extract rank from filename format like "S_filename.mp4"
-          const filenameParts = randomFile.split('/');
+          const filenameParts = selectedFile.Key.split('/');
           const filename = filenameParts[filenameParts.length - 1];
           const rank = filename.split('_')[0];
           
           setActualRank(rank);
-          setVideoKey(randomFile);
-          const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${randomFile}`;
+          setVideoKey(selectedFile.Key);
+          setPreviousClip(selectedFile.Key); // Remember this clip
+          const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(selectedFile.Key)}`;
           setVideoUrl(url);
         }
       } catch (err) {
@@ -167,8 +175,14 @@ function Play() {
         const data = await s3Client.send(command);
         const files = (data.Contents || []).filter(obj => obj.Key.endsWith('.mp4') || obj.Key.endsWith('.webm') || obj.Key.endsWith('.mov'));
         if (files.length > 0) {
-          const randomIndex = Math.floor(Math.random() * files.length);
-          const randomFile = files[randomIndex].Key;
+          // Filter out the previous clip to avoid back-to-back repeats
+          const availableFiles = files.filter(file => file.Key !== previousClip);
+          
+          // If only one clip exists or all filtered out, use all files
+          const filesToChooseFrom = availableFiles.length > 0 ? availableFiles : files;
+          
+          const randomIndex = Math.floor(Math.random() * filesToChooseFrom.length);
+          const randomFile = filesToChooseFrom[randomIndex].Key;
           
           // extract rank from filename
           const filenameParts = randomFile.split('/');
@@ -177,8 +191,9 @@ function Play() {
           
           setActualRank(rank);
           setVideoKey(randomFile);
-            const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(randomFile)}`;
-            setVideoUrl(url);
+          setPreviousClip(randomFile); // Remember this clip
+          const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(randomFile)}`;
+          setVideoUrl(url);
         }
       } catch (err) {
         console.error('Error fetching videos:', err);
