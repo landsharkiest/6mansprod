@@ -220,7 +220,7 @@ function Play() {
             e.target.style.transform = 'translateY(0)';
           }}
         >
-          🏠 Home
+          Home
         </Link>
       </div>
       {loading ? (

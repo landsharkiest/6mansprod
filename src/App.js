@@ -2,7 +2,6 @@ import logo from './logo.svg';
 import './App.css';
 import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
 import Upload from './pages/Upload';
-import Login from './pages/Login';
 import Play from './pages/Play';
 import { useDropzone } from 'react-dropzone';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -18,14 +17,6 @@ function App() {
     <Router>
     <div className="App">
       <Routes>
-        <Route
-          path="/login"
-          element={
-            <div className="App">
-              <Login />
-            </div>
-          }
-        />
         <Route
           path="/play"
           element={
@@ -43,7 +34,6 @@ function App() {
                   <input {...getInputProps()} />
                 <UploadClips />
                 <PlayGuest />
-                <Link to="/login"><LogIn /></Link>
               </header>
             </div>
           }
@@ -61,23 +51,12 @@ function PlayGuest() {
   return (
     <div className="Guest-play">
       <button className="play-guest-button" onClick={() => navigate('/play')}>
-        Play as Guest
+        Play
       </button>
     </div>
   );
 }
 
-
-// Components for the login stuff
-function LogIn() {
-  return (
-    <div className="Log-in">
-      <button className="Log-in-button">
-        Log In
-      </button>
-    </div>
-  )
-}
 
 // Components for the uploading clips stuff
 function UploadClips() {
