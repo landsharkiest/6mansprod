@@ -52,6 +52,9 @@ const pool = new Pool({
     database: 'postgres',
     password: 'Owenis57.',
     port: 5432,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
 async function initializeDatabase() {
