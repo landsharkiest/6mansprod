@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-identity';
 import './Play.css';
@@ -189,6 +190,31 @@ function Play() {
 
   return (
     <div className="Play">
+      <div className="home-button-container" style={{ 
+        position: 'absolute', 
+        top: '20px', 
+        left: '20px', 
+        zIndex: 1000 
+      }}>
+        <Link 
+          to="/" 
+          style={{ 
+            display: 'inline-block',
+            padding: '10px 20px',
+            backgroundColor: '#2196F3',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '4px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            transition: 'background-color 0.3s'
+          }}
+          onMouseOver={(e) => e.target.style.backgroundColor = '#0b7dda'}
+          onMouseOut={(e) => e.target.style.backgroundColor = '#2196F3'}
+        >
+          🏠 Home
+        </Link>
+      </div>
       {loading ? (
         <p>Loading...</p>
       ) : videoUrl ? (
