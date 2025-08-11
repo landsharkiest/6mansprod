@@ -96,7 +96,7 @@ function Play() {
       
       try {
         setLoadingStats(true);
-        const SERVER_URL = 'http://ec2-204-236-200-58.compute-1.amazonaws.com:3001';
+        const SERVER_URL = 'https://6mansloadbalancer-452822564.us-east-1.elb.amazonaws.com';
         
         const response = await fetch(`${SERVER_URL}/api/guesses`, {
           method: 'POST',
