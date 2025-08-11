@@ -4,7 +4,10 @@ const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: 'https://6mansdle.com',
+    credentials: true
+}));
 
 // Configure proper error handling for Express
 app.use((err, req, res, next) => {
