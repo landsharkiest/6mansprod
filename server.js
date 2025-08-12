@@ -373,13 +373,8 @@ app.get('/api/test', async (req, res) => {
 });
 
 const port = process.env.port || 3001;
-app.listen(port, () => {
-    console.log(`server running on port ${port}`);
-    console.log('- POST /api/guesses - record a new guess');
-    console.log('- GET /api/stats/video/:videoKey - get stats for a video');
-    console.log('- GET /api/stats - get overall stats');
-});
 
+// Discord Authentication Setup - BEFORE starting server
 const passport = require('passport');
 const session = require('express-session');
 const DiscordStrategy = require('passport-discord').Strategy;
@@ -388,37 +383,100 @@ require('dotenv').config();
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
-
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change_this_secret';
 
+console.log('Discord setup - Client ID:', DISCORD_CLIENT_ID ? 'Set' : 'Not set');
+console.log('Discord setup - Client Secret:', DISCORD_CLIENT_SECRET ? 'Set' : 'Not set');
+
+if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
+    console.warn('Discord credentials not set. Discord login will not work.');
+} else {
+    console.log('Discord credentials loaded successfully');
+}
+
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Session configuration
 app.use(session({
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: isProduction, // Only send cookie over HTTPS in production
-        sameSite: isProduction ? 'none' : 'lax' // Allow cross-site cookies for frontend-backend on different domains
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
+
+// Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.use(new DiscordStrategy({
-    clientID: DISCORD_CLIENT_ID,
-    clientSecret: DISCORD_CLIENT_SECRET,
-    callbackURL: 'https://6mansdle.com/auth/discord/callback',
-    scope: ['identify', 'email']
-}, function(accessToken, refreshToken, profile, done) {
-    return done(null, profile);
-}));
-
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((obj, done) => done(null, obj));
-
-app.get('/auth/discord', passport.authenticate('discord'));
-app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/'}),
-(req, res) => {
-    res.redirect('/');
+// Discord Strategy
+if (DISCORD_CLIENT_ID && DISCORD_CLIENT_SECRET) {
+    passport.use(new DiscordStrategy({
+        clientID: DISCORD_CLIENT_ID,
+        clientSecret: DISCORD_CLIENT_SECRET,
+        callbackURL: 'https://6mansdle.com/auth/discord/callback',
+        scope: ['identify', 'email']
+    }, function(accessToken, refreshToken, profile, done) {
+        console.log('Discord OAuth callback received for user:', profile.username);
+        return done(null, profile);
+    }));
 }
+
+passport.serializeUser((user, done) => {
+    console.log('Serializing user:', user.username);
+    done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+    console.log('Deserializing user:', obj.username);
+    done(null, obj);
+});
+
+// Discord auth routes
+app.get('/auth/discord', (req, res, next) => {
+    console.log('Discord auth route hit');
+    if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
+        return res.status(500).json({ error: 'Discord authentication not configured' });
+    }
+    passport.authenticate('discord')(req, res, next);
+});
+
+app.get('/auth/discord/callback', 
+    passport.authenticate('discord', { failureRedirect: '/' }),
+    (req, res) => {
+        console.log('Discord callback successful for user:', req.user?.username);
+        res.redirect('/');
+    }
 );
+
+// Endpoint to return logged-in user info
+app.get('/api/user', (req, res) => {
+    console.log('User endpoint hit. Authenticated:', req.isAuthenticated ? req.isAuthenticated() : false);
+    console.log('Session:', req.session);
+    console.log('User:', req.user);
+    
+    if (req.isAuthenticated && req.isAuthenticated()) {
+        res.json({ 
+            authenticated: true,
+            user: req.user 
+        });
+    } else {
+        res.status(401).json({ 
+            authenticated: false,
+            error: 'Not authenticated' 
+        });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`server running on port ${port}`);
+    console.log('- POST /api/guesses - record a new guess');
+    console.log('- GET /api/stats/video/:videoKey - get stats for a video');
+    console.log('- GET /api/stats - get overall stats');
+    if (DISCORD_CLIENT_ID && DISCORD_CLIENT_SECRET) {
+        console.log('- Discord authentication enabled at /auth/discord');
+    }
+});
