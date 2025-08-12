@@ -116,7 +116,6 @@ function App() {
           element={
             <div className="App">
               <header className="App-header">
-                <UpdateLog updates={updates} />
                 {user && (
                   <div style={{
                     position: 'absolute',
@@ -173,12 +172,14 @@ function App() {
                     <UploadClips />
                     <PlayGuest />
                     <DiscordLoginButton />
+                    <UpdateLog updates={updates} />
                   </>
                 ) : (
                   <>
                     <input {...getInputProps()} />
                     <UploadClips />
                     <PlayGuest />
+                    <UpdateLog updates={updates} />
                   </>
                 )}
               </header>
