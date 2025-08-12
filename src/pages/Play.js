@@ -269,7 +269,13 @@ function Play() {
               )}
               
               {isDatabaseConnected && guessStats && (
-                <div className="stats-container">
+                <div className="stats-container" style={{
+                  width: '100%',
+                  maxWidth: window.innerWidth <= 600 ? '95vw' : '800px',
+                  margin: '0 auto',
+                  padding: '20px',
+                  boxSizing: 'border-box'
+                }}>
                   <h3>Guess Distribution</h3>
                   <GuessDistribution stats={guessStats} />
                   <p>Total guesses: {guessStats.totalGuesses}</p>
@@ -475,11 +481,12 @@ function GuessDistribution({ stats }) {
           data={chartData}
           margin={{
             top: 30,
-            right: 30,
-            left: 20,
+            right: 10,
+            left: 10,
             bottom: 10,
           }}
-          barCategoryGap={window.innerWidth <= 600 ? "10%" : "20%"}
+          barCategoryGap={window.innerWidth <= 600 ? "5%" : "10%"}
+          maxBarSize={window.innerWidth <= 600 ? 30 : 50}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
           <XAxis 
