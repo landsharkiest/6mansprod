@@ -411,7 +411,7 @@ if (DISCORD_CLIENT_ID && DISCORD_CLIENT_SECRET) {
     passport.use(new DiscordStrategy({
         clientID: DISCORD_CLIENT_ID,
         clientSecret: DISCORD_CLIENT_SECRET,
-        callbackURL: 'https://6mansdle.com/auth/discord/callback',
+        callbackURL: 'http://ec2-204-236-200-58.compute-1.amazonaws.com:3001/auth/discord/callback',
         scope: ['identify', 'email']
     }, function(accessToken, refreshToken, profile, done) {
         console.log('Discord OAuth callback received for user:', profile.username);
