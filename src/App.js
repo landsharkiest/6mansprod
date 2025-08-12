@@ -201,17 +201,70 @@ function App() {
                   <p>Loading...</p>
                 ) : !user ? (
                   <>
-                    <input {...getInputProps()} />
-                    <UploadClips />
-                    <PlayGuest />
-                    <DiscordLoginButton />
+                    {/* Only show upload on desktop */}
+                    {window.innerWidth > 600 && (
+                      <>
+                        <input {...getInputProps()} />
+                        <UploadClips />
+                      </>
+                    )}
+                    {/* Play and Login buttons: mobile at bottom, desktop normal */}
+                    {window.innerWidth <= 600 ? (
+                      <div style={{
+                        position: 'fixed',
+                        left: 0,
+                        right: 0,
+                        bottom: '48px', // moved up from the very bottom
+                        width: '100vw',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 0 18px 0',
+                        background: 'rgba(0,0,0,0.03)',
+                        zIndex: 999
+                      }}>
+                        <PlayGuest />
+                        <DiscordLoginButton />
+                      </div>
+                    ) : (
+                      <>
+                        <PlayGuest />
+                        <DiscordLoginButton />
+                      </>
+                    )}
                     <UpdateLog updates={updates} />
                   </>
                 ) : (
                   <>
-                    <input {...getInputProps()} />
-                    <UploadClips />
-                    <PlayGuest />
+                    {/* Only show upload on desktop */}
+                    {window.innerWidth > 600 && (
+                      <>
+                        <input {...getInputProps()} />
+                        <UploadClips />
+                      </>
+                    )}
+                    {/* Play button: mobile at bottom, desktop normal */}
+                    {window.innerWidth <= 600 ? (
+                      <div style={{
+                        position: 'fixed',
+                        left: 0,
+                        right: 0,
+                        bottom: '48px', // moved up from the very bottom
+                        width: '100vw',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 0 18px 0',
+                        background: 'rgba(0,0,0,0.03)',
+                        zIndex: 999
+                      }}>
+                        <PlayGuest />
+                      </div>
+                    ) : (
+                      <PlayGuest />
+                    )}
                     <UpdateLog updates={updates} />
                   </>
                 )}
@@ -379,20 +432,20 @@ function UpdateLog({ updates }) {
     transition: 'all 0.3s'
   };
 
-  // Mobile style (fixed, scrollable)
+  // Mobile style (fixed, scrollable, top, smaller)
   const mobileStyle = {
     position: 'fixed',
     left: '50%',
-    bottom: '0',
+    top: '10%',
     transform: 'translateX(-50%)',
-    width: '95vw',
-    maxWidth: '400px',
-    maxHeight: '40vh',
-    fontSize: '12px',
+    width: '90vw',
+    maxWidth: '320px',
+    maxHeight: '24vh',
+    fontSize: '11px',
     margin: '0',
-    padding: '10px',
+    padding: '6px',
     backgroundColor: 'rgba(0, 0, 0, 0.92)',
-    borderRadius: '10px 10px 0 0',
+    borderRadius: '0 0 8px 8px',
     overflowY: 'auto',
     zIndex: 1000,
     boxSizing: 'border-box'
@@ -405,11 +458,11 @@ function UpdateLog({ updates }) {
   return (
     <div style={style}>
       <h3 style={{
-        margin: '0 0 15px 0',
-        fontSize: isMobile ? '16px' : '18px',
+        margin: '0 0 10px 0',
+        fontSize: isMobile ? '13px' : '18px',
         textAlign: 'center',
         borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
-        paddingBottom: '10px'
+        paddingBottom: '6px'
       }}>
         Update Log
       </h3>
