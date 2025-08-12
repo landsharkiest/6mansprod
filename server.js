@@ -1,11 +1,3 @@
-// Endpoint to return logged-in user info
-app.get('/api/user', (req, res) => {
-    if (req.isAuthenticated && req.isAuthenticated()) {
-        res.json({ user: req.user });
-    } else {
-        res.status(401).json({ error: 'Not authenticated' });
-    }
-});
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
