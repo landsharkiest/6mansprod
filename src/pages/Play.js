@@ -18,11 +18,12 @@ function Play() {
   const [guessStats, setGuessStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [isDatabaseConnected, setIsDatabaseConnected] = useState(true);
-  const [previousClip, setPreviousClip] = useState(null);
   
   // Cache for video files to avoid repeated S3 calls
-  const [videoCache, setVideoCache] = useState(null);
-  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const videoCacheRef = React.useRef(null);
+  const lastFetchTimeRef = React.useRef(0);
+  const fetchVideosRef = React.useRef(null); // Store fetch function for manual calls
+  const previousClipRef = React.useRef(null); // Use ref instead of state
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
   
   // Create S3Client once and reuse
@@ -64,12 +65,12 @@ function Play() {
   
   
   useEffect(() => {
-    async function fetchVideos() {
-      // Check if we have cached data that's still valid
+    async function fetchVideos(forceNew = false) {
+      // Check if we have cached data that's still valid (unless forcing new)
       const now = Date.now();
-      if (videoCache && (now - lastFetchTime) < CACHE_DURATION) {
+      if (!forceNew && videoCacheRef.current && (now - lastFetchTimeRef.current) < CACHE_DURATION) {
         // Use cached data
-        const files = videoCache;
+        const files = videoCacheRef.current;
         selectRandomVideo(files);
         setLoading(false);
         return;
@@ -89,8 +90,8 @@ function Play() {
           const files = (data.Contents || []).filter(obj => obj.Key.endsWith('.mp4') || obj.Key.endsWith('.webm') || obj.Key.endsWith('.mov'));
           
           // Cache the results
-          setVideoCache(files);
-          setLastFetchTime(now);
+          videoCacheRef.current = files;
+          lastFetchTimeRef.current = now;
           
           selectRandomVideo(files);
           break; // Success, exit retry loop
@@ -119,7 +120,7 @@ function Play() {
     function selectRandomVideo(files) {
       if (files.length > 0) {
         // Filter out the previous clip to avoid back-to-back repeats
-        const availableFiles = files.filter(file => file.Key !== previousClip);
+        const availableFiles = files.filter(file => file.Key !== previousClipRef.current);
         
         // If only one clip exists or all filtered out, use all files
         const filesToChooseFrom = availableFiles.length > 0 ? availableFiles : files;
@@ -146,14 +147,17 @@ function Play() {
         
         setActualRank(rank);
         setVideoKey(selectedFile.Key);
-        setPreviousClip(selectedFile.Key); // Remember this clip
+        previousClipRef.current = selectedFile.Key; // Use ref instead of state
         const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(selectedFile.Key)}`;
         setVideoUrl(url);
       }
     }
     
+    // Store the function for manual calls
+    fetchVideosRef.current = fetchVideos;
+    
     fetchVideos();
-  }, [previousClip, videoCache, lastFetchTime, s3Client]);
+  }, []); // Empty dependency array - only run on mount
 
   const handleGuessSubmit = async (guessedRank) => {
     // compare guessed rank with actual rank
@@ -223,49 +227,10 @@ function Play() {
     setGuessStats(null);
     setIsDatabaseConnected(true);
     
-    // fetch new random video
-    async function fetchVideos() {
-      const s3Client = new S3Client({
-        region: REGION,
-        credentials: fromCognitoIdentityPool({
-          clientConfig: { region: REGION },
-          identityPoolId: IDENTITY_POOL_ID,
-        }),
-      });
-      try {
-        const command = new ListObjectsV2Command({
-          Bucket: BUCKET,
-          Prefix: 'verified/'
-        });
-        const data = await s3Client.send(command);
-        const files = (data.Contents || []).filter(obj => obj.Key.endsWith('.mp4') || obj.Key.endsWith('.webm') || obj.Key.endsWith('.mov'));
-        if (files.length > 0) {
-          // Filter out the previous clip to avoid back-to-back repeats
-          const availableFiles = files.filter(file => file.Key !== previousClip);
-          
-          // If only one clip exists or all filtered out, use all files
-          const filesToChooseFrom = availableFiles.length > 0 ? availableFiles : files;
-          
-          const randomIndex = Math.floor(Math.random() * filesToChooseFrom.length);
-          const randomFile = filesToChooseFrom[randomIndex].Key;
-          
-          // extract rank from filename
-          const filenameParts = randomFile.split('/');
-          const filename = filenameParts[filenameParts.length - 1];
-          const rank = filename.split('_')[0];
-          
-          setActualRank(rank);
-          setVideoKey(randomFile);
-          setPreviousClip(randomFile); // Remember this clip
-          const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(randomFile)}`;
-          setVideoUrl(url);
-        }
-      } catch (err) {
-        console.error('Error fetching videos:', err);
-      }
-      setLoading(false);
+    // Call fetchVideos directly with forceNew flag
+    if (fetchVideosRef.current) {
+      fetchVideosRef.current(true); // Force new video, bypass cache
     }
-    fetchVideos();
   };
 
   return (
