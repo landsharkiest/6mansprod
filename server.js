@@ -6,7 +6,7 @@ const app = express();
 
 // Add manual CORS middleware first
 app.use((req, res, next) => {
-    const allowedOrigins = ['https://6mansdle.com', 'https://www.6mansdle.com'];
+    const allowedOrigins = ['https://6mansdle.com', 'https://www.6mansdle.com', 'https://localhost:3000'];
     const origin = req.headers.origin;
     
     if (allowedOrigins.includes(origin)) {
