@@ -466,17 +466,20 @@ function GuessDistribution({ stats }) {
   };
   
   return (
-    <div className="guess-distribution" style={{ width: '100%', height: '350px' }}>
+    <div className="guess-distribution" style={{ 
+      width: '100%', 
+      height: window.innerWidth <= 600 ? '280px' : '400px' 
+    }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
           margin={{
             top: 30,
-            right: 50,
-            left: 50,
+            right: 30,
+            left: 20,
             bottom: 10,
           }}
-          barCategoryGap="20%"
+          barCategoryGap={window.innerWidth <= 600 ? "10%" : "20%"}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
           <XAxis 
