@@ -395,8 +395,9 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
+        secure: true,
+        sameSite: 'none',
+        domain: '.6mansdle.com',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
