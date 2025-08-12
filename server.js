@@ -1,3 +1,11 @@
+// Endpoint to return logged-in user info
+app.get('/api/user', (req, res) => {
+    if (req.isAuthenticated && req.isAuthenticated()) {
+        res.json({ user: req.user });
+    } else {
+        res.status(401).json({ error: 'Not authenticated' });
+    }
+});
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -380,9 +388,19 @@ require('dotenv').config();
 
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change_this_secret';
 
-app.use(session({ secret: SESSION_SECRET, resave: false, saveUninitialized: false }));
+const isProduction = process.env.NODE_ENV === 'production';
+app.use(session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: isProduction, // Only send cookie over HTTPS in production
+        sameSite: isProduction ? 'none' : 'lax' // Allow cross-site cookies for frontend-backend on different domains
+    }
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
