@@ -439,10 +439,10 @@ app.get('/auth/discord', (req, res, next) => {
 });
 
 app.get('/auth/discord/callback', 
-    passport.authenticate('discord', { failureRedirect: '/' }),
+    passport.authenticate('discord', { failureRedirect: 'https://6mansdle.com/' }),
     (req, res) => {
         console.log('Discord callback successful for user:', req.user?.username);
-        res.redirect('/');
+        res.redirect('https://6mansdle.com/');
     }
 );
 
