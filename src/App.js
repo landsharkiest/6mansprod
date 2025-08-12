@@ -34,6 +34,7 @@ function App() {
                   <input {...getInputProps()} />
                 <UploadClips />
                 <PlayGuest />
+                <DiscordLoginButton />
               </header>
             </div>
           }
@@ -155,5 +156,25 @@ function UploadClips() {
     </div>
   );
 }
+
+function DiscordLoginButton() {
+  return (
+    <a href="https://6mansdle.com/auth/discord">
+      <button style={{
+        backgroundColor: '#5865F2',
+        color: 'white',
+        border: 'none',
+        borderRadius: '5px',
+        padding: '10px 20px',
+        marginTop: '50%',
+        fontWeight: 'bold',
+        cursor: 'pointer'
+      }}>
+        Login with Discord
+      </button>
+    </a>
+  );
+}
+
 
 export default App;

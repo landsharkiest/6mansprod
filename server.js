@@ -371,3 +371,36 @@ app.listen(port, () => {
     console.log('- GET /api/stats/video/:videoKey - get stats for a video');
     console.log('- GET /api/stats - get overall stats');
 });
+
+const passport = require('passport');
+const session = require('express-session');
+const DiscordStrategy = require('passport-discord').Strategy;
+
+require('dotenv').config();
+
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const SESSION_SECRET = process.env.SESSION_SECRET || 'change_this_secret';
+
+app.use(session({ secret: SESSION_SECRET, resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new DiscordStrategy({
+    clientID: DISCORD_CLIENT_ID,
+    clientSecret: DISCORD_CLIENT_SECRET,
+    callbackURL: 'https://6mansdle.com/auth/discord/callback',
+    scope: ['identify', 'email']
+}, function(accessToken, refreshToken, profile, done) {
+    return done(null, profile);
+}));
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+app.get('/auth/discord', passport.authenticate('discord'));
+app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/'}),
+(req, res) => {
+    res.redirect('/');
+}
+);
