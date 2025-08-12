@@ -381,6 +381,7 @@ const DiscordStrategy = require('passport-discord').Strategy;
 
 require('dotenv').config();
 
+console.log('=== Discord Setup Starting ===');
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change_this_secret';
