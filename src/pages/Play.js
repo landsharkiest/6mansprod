@@ -89,7 +89,7 @@ function Play() {
       setLoading(false);
     }
     fetchVideos();
-  }, []);
+  }, [previousClip]);
 
   const handleGuessSubmit = async (guessedRank) => {
     // compare guessed rank with actual rank
@@ -384,7 +384,7 @@ function GuessDistribution({ stats }) {
 
   // Custom shaped bar component
   const CustomShapeBar = (props) => {
-    const { fill, payload, x, y, width, height } = props;
+    const { payload, x, y, width, height } = props;
     const barColor = payload.color; // Use custom rank color
     
     // Create a custom hexagonal/diamond shape

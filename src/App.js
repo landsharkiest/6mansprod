@@ -1,11 +1,10 @@
-import logo from './logo.svg';
 import './App.css';
-import { BrowserRouter as Router, Route, Routes, Link, useNavigate } from 'react-router-dom';
-import Upload from './pages/Upload';
+import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import Play from './pages/Play';
 import { useDropzone } from 'react-dropzone';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-identity';
+import { motion } from 'framer-motion';
 import React from 'react';
 
 function App() {
@@ -18,7 +17,8 @@ function App() {
       date: "Aug 12, 2025",
       version: "v1.2.1",
       changes: [
-        "Fixed SSL security warnings",
+        "Improved mobile functionality",
+        "Improved 6mansdle logo",
         "Added Discord login functionality", 
         "User profiles now display in top right",
         "Fixed video encoding issues"
@@ -97,7 +97,7 @@ function App() {
     setUser(null);
   };
   
-  const { getRootProps, getInputProps } = useDropzone();
+  const { getInputProps } = useDropzone();
 
   return (
     <Router>
@@ -196,16 +196,84 @@ function App() {
                     );
                   })()
                 )}
-                <h1>6mansdle</h1>
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    margin: '5% 0 20px 0',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Main text */}
+                  <motion.h1
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.6 }}
+                    style={{
+                      fontSize: window.innerWidth <= 600 ? '2.8rem' : '6.0rem',
+                      fontFamily: 'system-ui, -apple-system, sans-serif',
+                      fontWeight: '700',
+                      margin: '0',
+                      letterSpacing: '1px',
+                      color: '#ffffff',
+                      textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                      position: 'relative'
+                    }}
+                  >
+                    <span style={{ color: '#ffffffff' }}>6</span>
+                    <span style={{ color: '#ffffff' }}>mans</span>
+                    <span style={{ color: '#ff6b35' }}>dle</span>
+                    
+                    {/* Minecraft-style yellow text overlay */}
+                    <motion.span
+                      initial={{ opacity: 0, rotate: -10, scale: 0.8 }}
+                      animate={{ 
+                        opacity: 1, 
+                        rotate: -30, 
+                        scale: 1,
+                        y: [0, -8, 0]
+                      }}
+                      transition={{ 
+                        opacity: { delay: 0.8, duration: 0.5 },
+                        rotate: { delay: 0.8, duration: 0.5 },
+                        scale: { delay: 0.8, duration: 0.5 },
+                        y: {
+                          delay: 1.3,
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                          ease: "easeInOut"
+                        }
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '15%',
+                        left: '-20%',
+                        fontSize: window.innerWidth <= 600 ? '1rem' : '1.2rem',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold',
+                        color: '#FFFF55',
+                        textShadow: '2px 2px 0px #B8860B, 0 0 10px rgba(255, 255, 85, 0.5)',
+                        zIndex: 10
+                      }}
+                    >
+                      tcawley = insta-dodge
+                    </motion.span>
+                  </motion.h1>
+                </motion.div>
                 {loading ? (
                   <p>Loading...</p>
                 ) : !user ? (
                   <>
                     {window.innerWidth > 600 && (
-                      <>
+                      <div style={{ marginTop: '-200px' }}>
                         <input {...getInputProps()} />
                         <UploadClips />
-                      </>
+                      </div>
                     )}
                     {window.innerWidth <= 600 ? (
                       // mobile: buttons at bottom
@@ -227,10 +295,10 @@ function App() {
                         <DiscordLoginButton />
                       </div>
                     ) : (
-                      <>
+                      <div style={{ marginTop: '-20px' }}>
                         <PlayGuest />
                         <DiscordLoginButton />
-                      </>
+                      </div>
                     )}
                     <UpdateLog updates={updates} />
                   </>
