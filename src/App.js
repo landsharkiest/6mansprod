@@ -43,9 +43,9 @@ function App() {
     }
   ];
 
-  // Check if user is logged in when component mounts
+  // discord oauth authentication flow
   React.useEffect(() => {
-    // Check URL for user data from Discord callback
+    // check url for discord callback data
     const urlParams = new URLSearchParams(window.location.search);
     const userParam = urlParams.get('user');
     
@@ -64,7 +64,7 @@ function App() {
       }
     }
     
-    // Check localStorage for existing user
+    // check localstorage for existing session
     const savedUser = localStorage.getItem('discordUser');
     if (savedUser) {
       try {
@@ -77,7 +77,7 @@ function App() {
       }
     }
     
-    // If no user data found, try API call (fallback)
+    // fallback api check with cookies
     fetch('https://backend.6mansdle.com/api/user', {
       credentials: 'include'
     })
@@ -97,7 +97,6 @@ function App() {
     setUser(null);
   };
   
-
   const { getRootProps, getInputProps } = useDropzone();
 
   return (
@@ -121,6 +120,7 @@ function App() {
                   (() => {
                     const isMobile = window.innerWidth <= 600;
                     if (isMobile) {
+                      // mobile: avatar only
                       return (
                         <div style={{
                           position: 'fixed',
@@ -144,7 +144,7 @@ function App() {
                         </div>
                       );
                     }
-                    // Desktop: show full profile info
+                    // desktop: full profile with logout
                     return (
                       <div style={{
                         position: 'absolute',
@@ -201,20 +201,19 @@ function App() {
                   <p>Loading...</p>
                 ) : !user ? (
                   <>
-                    {/* Only show upload on desktop */}
                     {window.innerWidth > 600 && (
                       <>
                         <input {...getInputProps()} />
                         <UploadClips />
                       </>
                     )}
-                    {/* Play and Login buttons: mobile at bottom, desktop normal */}
                     {window.innerWidth <= 600 ? (
+                      // mobile: buttons at bottom
                       <div style={{
                         position: 'fixed',
                         left: 0,
                         right: 0,
-                        bottom: '48px', // moved up from the very bottom
+                        bottom: '48px',
                         width: '100vw',
                         display: 'flex',
                         flexDirection: 'column',
@@ -237,15 +236,14 @@ function App() {
                   </>
                 ) : (
                   <>
-                    {/* Only show upload on desktop */}
                     {window.innerWidth > 600 && (
                       <>
                         <input {...getInputProps()} />
                         <UploadClips />
                       </>
                     )}
-                    {/* Play button: mobile at bottom, desktop normal */}
                     {window.innerWidth <= 600 ? (
+                      // mobile: play button at bottom
                       <div style={{
                         position: 'fixed',
                         left: 0,
@@ -278,8 +276,6 @@ function App() {
   );
 }
 
-
-// Components for the guest play stuff
 function PlayGuest() {
   const navigate = useNavigate();
   return (
@@ -291,8 +287,7 @@ function PlayGuest() {
   );
 }
 
-
-// Components for the uploading clips stuff
+// s3 upload component using cognito identity pool
 function UploadClips() {
   const REGION = "us-east-1";
   const BUCKET = "6mans-clip-bucket";
@@ -302,6 +297,7 @@ function UploadClips() {
   const [selectedRank, setSelectedRank] = React.useState(ranks[0]);
   const [pendingFiles, setPendingFiles] = React.useState([]);
 
+  // aws s3 client with cognito identity pool credentials
   const s3Client = new S3Client({
     region: REGION,
     credentials: fromCognitoIdentityPool({
@@ -390,6 +386,7 @@ function UploadClips() {
   );
 }
 
+// discord oauth login redirect
 function DiscordLoginButton() {
   return (
     <a href="https://backend.6mansdle.com/auth/discord">
