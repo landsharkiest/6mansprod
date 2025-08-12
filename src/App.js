@@ -9,6 +9,23 @@ import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-id
 import React from 'react';
 
 function App() {
+  const [user, setUser] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  // Check if user is logged in when component mounts
+  React.useEffect(() => {
+    fetch('http://ec2-204-236-200-58.compute-1.amazonaws.com:3001/api/user', {
+      credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.authenticated) {
+        setUser(data.user);
+      }
+    })
+    .catch(error => console.log('Not logged in'))
+    .finally(() => setLoading(false));
+  }, []);
   
 
   const { getRootProps, getInputProps } = useDropzone();
@@ -30,11 +47,55 @@ function App() {
           element={
             <div className="App">
               <header className="App-header">
+                {user && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                    padding: '10px 15px',
+                    borderRadius: '25px',
+                    zIndex: 1000
+                  }}>
+                    <img 
+                      src={user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`} 
+                      alt="Avatar" 
+                      style={{
+                        width: '40px', 
+                        height: '40px', 
+                        borderRadius: '50%',
+                        border: '2px solid white'
+                      }} 
+                    />
+                    <span style={{
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: '16px'
+                    }}>
+                      {user.username}
+                    </span>
+                  </div>
+                )}
                 <h1>6mansdle</h1>
-                  <input {...getInputProps()} />
-                <UploadClips />
-                <PlayGuest />
-                <DiscordLoginButton />
+                {loading ? (
+                  <p>Loading...</p>
+                ) : !user ? (
+                  <>
+                    <input {...getInputProps()} />
+                    <UploadClips />
+                    <PlayGuest />
+                    <DiscordLoginButton />
+                  </>
+                ) : (
+                  <>
+                    <input {...getInputProps()} />
+                    <UploadClips />
+                    <PlayGuest />
+                  </>
+                )}
               </header>
             </div>
           }
