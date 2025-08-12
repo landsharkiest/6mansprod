@@ -20,6 +20,23 @@ function Play() {
   const [isDatabaseConnected, setIsDatabaseConnected] = useState(true);
   const [previousClip, setPreviousClip] = useState(null);
   
+  // Cache for video files to avoid repeated S3 calls
+  const [videoCache, setVideoCache] = useState(null);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  
+  // Create S3Client once and reuse
+  const [s3Client] = useState(() => new S3Client({
+    region: REGION,
+    credentials: fromCognitoIdentityPool({
+      clientConfig: { region: REGION },
+      identityPoolId: IDENTITY_POOL_ID,
+    }),
+  }));
+  
+  // Sleep function for retry delays
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  
   // store guess locally and delete after successful server save
   const storeGuessLocally = (videoKey, guessedRank, actualRank, isCorrect) => {
     try {
@@ -48,48 +65,95 @@ function Play() {
   
   useEffect(() => {
     async function fetchVideos() {
-      const s3Client = new S3Client({
-        region: REGION,
-        credentials: fromCognitoIdentityPool({
-          clientConfig: { region: REGION },
-          identityPoolId: IDENTITY_POOL_ID,
-        }),
-      });
-      try {
-        const command = new ListObjectsV2Command({
-          Bucket: BUCKET,
-          Prefix: 'verified/'
-        });
-        const data = await s3Client.send(command);
-        const files = (data.Contents || []).filter(obj => obj.Key.endsWith('.mp4') || obj.Key.endsWith('.webm') || obj.Key.endsWith('.mov'));
-        if (files.length > 0) {
-          // Filter out the previous clip to avoid back-to-back repeats
-          const availableFiles = files.filter(file => file.Key !== previousClip);
+      // Check if we have cached data that's still valid
+      const now = Date.now();
+      if (videoCache && (now - lastFetchTime) < CACHE_DURATION) {
+        // Use cached data
+        const files = videoCache;
+        selectRandomVideo(files);
+        setLoading(false);
+        return;
+      }
+      
+      // Retry logic with exponential backoff
+      const maxRetries = 3;
+      let retryCount = 0;
+      
+      while (retryCount < maxRetries) {
+        try {
+          const command = new ListObjectsV2Command({
+            Bucket: BUCKET,
+            Prefix: 'verified/'
+          });
+          const data = await s3Client.send(command);
+          const files = (data.Contents || []).filter(obj => obj.Key.endsWith('.mp4') || obj.Key.endsWith('.webm') || obj.Key.endsWith('.mov'));
           
-          // If only one clip exists or all filtered out, use all files
-          const filesToChooseFrom = availableFiles.length > 0 ? availableFiles : files;
+          // Cache the results
+          setVideoCache(files);
+          setLastFetchTime(now);
           
-          const randomIndex = Math.floor(Math.random() * filesToChooseFrom.length);
-          const selectedFile = filesToChooseFrom[randomIndex];
+          selectRandomVideo(files);
+          break; // Success, exit retry loop
           
-          // extract rank from filename format like "S_filename.mp4"
-          const filenameParts = selectedFile.Key.split('/');
-          const filename = filenameParts[filenameParts.length - 1];
-          const rank = filename.split('_')[0];
+        } catch (err) {
+          console.error(`Error fetching videos (attempt ${retryCount + 1}):`, err);
           
-          setActualRank(rank);
-          setVideoKey(selectedFile.Key);
-          setPreviousClip(selectedFile.Key); // Remember this clip
-          const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(selectedFile.Key)}`;
-          setVideoUrl(url);
+          if (err.name === 'TooManyRequestsException' || err.name === 'ThrottlingException') {
+            retryCount++;
+            if (retryCount < maxRetries) {
+              const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s, 8s
+              console.log(`Rate limited, retrying in ${delay}ms...`);
+              await sleep(delay);
+              continue;
+            }
+          }
+          
+          // If all retries failed or it's a different error, break out
+          console.error('All retry attempts failed or non-retryable error');
+          break;
         }
-      } catch (err) {
-        console.error('Error fetching videos:', err);
       }
       setLoading(false);
     }
+    
+    function selectRandomVideo(files) {
+      if (files.length > 0) {
+        // Filter out the previous clip to avoid back-to-back repeats
+        const availableFiles = files.filter(file => file.Key !== previousClip);
+        
+        // If only one clip exists or all filtered out, use all files
+        const filesToChooseFrom = availableFiles.length > 0 ? availableFiles : files;
+        
+        const randomIndex = Math.floor(Math.random() * filesToChooseFrom.length);
+        const selectedFile = filesToChooseFrom[randomIndex];
+        
+        // extract rank from filename format like "S_filename.mp4"
+        const filenameParts = selectedFile.Key.split('/');
+        const filename = filenameParts[filenameParts.length - 1];
+        const rank = filename.split('_')[0];
+        
+        // Debug logging to check rank extraction
+        console.log('Selected file:', selectedFile.Key);
+        console.log('Extracted filename:', filename);
+        console.log('Extracted rank:', rank);
+        
+        // Validate that the extracted rank is one of the expected ranks
+        const validRanks = ["S", "X", "A", "B+", "B", "C", "D", "E", "H"];
+        if (!validRanks.includes(rank)) {
+          console.warn('Invalid rank extracted:', rank, 'from filename:', filename);
+          console.warn('Expected one of:', validRanks);
+        }
+        
+        setActualRank(rank);
+        setVideoKey(selectedFile.Key);
+        setPreviousClip(selectedFile.Key); // Remember this clip
+        const url = `https://${BUCKET}.s3.${REGION}.amazonaws.com/${encodeURIComponent(selectedFile.Key)}`;
+        setVideoUrl(url);
+      }
+    }
+    
     fetchVideos();
-  }, [previousClip]);
+  }, [previousClip, videoCache, lastFetchTime, s3Client]);
 
   const handleGuessSubmit = async (guessedRank) => {
     // compare guessed rank with actual rank
