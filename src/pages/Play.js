@@ -105,7 +105,7 @@ function Play() {
       
       try {
         setLoadingStats(true);
-        const SERVER_URL = 'https://ec2-204-236-200-58.compute-1.amazonaws.com:3002';
+        const SERVER_URL = 'https://backend.6mansdle.com';
         
         const response = await fetch(`${SERVER_URL}/api/guesses`, {
           method: 'POST',

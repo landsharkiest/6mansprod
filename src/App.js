@@ -77,7 +77,7 @@ function App() {
     }
     
     // If no user data found, try API call (fallback)
-    fetch('https://ec2-204-236-200-58.compute-1.amazonaws.com:3002/api/user', {
+    fetch('https://backend.6mansdle.com/api/user', {
       credentials: 'include'
     })
     .then(response => response.json())
@@ -306,7 +306,7 @@ function UploadClips() {
 
 function DiscordLoginButton() {
   return (
-    <a href="https://ec2-204-236-200-58.compute-1.amazonaws.com:3002/auth/discord">
+    <a href="https://backend.6mansdle.com/auth/discord">
       <button style={{
         backgroundColor: '#5865F2',
         color: 'white',
