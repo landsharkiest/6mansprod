@@ -12,6 +12,36 @@ function App() {
   const [user, setUser] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
 
+  // Update log data
+  const updates = [
+    {
+      date: "Aug 12, 2025",
+      version: "v1.2.0",
+      changes: [
+        "Added Discord login functionality",
+        "User profiles now display in top right",
+        "Fixed video encoding issues"
+      ]
+    },
+    {
+      date: "Aug 11, 2025", 
+      version: "v1.1.0",
+      changes: [
+        "Added Google Analytics tracking",
+        "Improved guess distribution display",
+        "Added home button to game page",
+        "Added upload file system"
+      ]
+    },
+    {
+      date: "Aug 10, 2025",
+      version: "v1.0.0", 
+      changes: [
+        "Initial release of 6mansdle",
+      ]
+    }
+  ];
+
   // Check if user is logged in when component mounts
   React.useEffect(() => {
     // Check URL for user data from Discord callback
@@ -86,6 +116,7 @@ function App() {
           element={
             <div className="App">
               <header className="App-header">
+                <UpdateLog updates={updates} />
                 {user && (
                   <div style={{
                     position: 'absolute',
@@ -288,6 +319,89 @@ function DiscordLoginButton() {
         Login with Discord
       </button>
     </a>
+  );
+}
+
+// Update Log Component
+function UpdateLog({ updates }) {
+  return (
+    <div style={{
+      position: 'absolute',
+      top: '20px',
+      left: '20px',
+      width: '280px',
+      maxHeight: '400px',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      borderRadius: '10px',
+      padding: '15px',
+      color: 'white',
+      fontSize: '14px',
+      overflowY: 'auto',
+      zIndex: 1000,
+      marginTop: '10%',
+      marginLeft: '5%'
+    }}>
+      <h3 style={{
+        margin: '0 0 15px 0',
+        fontSize: '18px',
+        textAlign: 'center',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
+        paddingBottom: '10px'
+      }}>
+        Update Log
+      </h3>
+      
+      {updates.map((update, index) => (
+        <div key={index} style={{
+          marginBottom: '15px',
+          paddingBottom: '15px',
+          borderBottom: index < updates.length - 1 ? '1px solid rgba(255, 255, 255, 0.2)' : 'none'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '8px'
+          }}>
+            <span style={{
+              fontWeight: 'bold',
+              color: '#f1f1f1ff'
+            }}>
+              {update.version}
+            </span>
+            <span style={{
+              fontSize: '12px',
+              color: '#ccc'
+            }}>
+              {update.date}
+            </span>
+          </div>
+          
+          <ul style={{
+            margin: '0',
+            paddingLeft: '20px',
+            listStyle: 'none'
+          }}>
+            {update.changes.map((change, changeIndex) => (
+              <li key={changeIndex} style={{
+                marginBottom: '4px',
+                position: 'relative'
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  left: '-15px',
+                  color: '#4CAF50'
+                }}>
+                  •
+                </span>
+                {change}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
   );
 }
 
