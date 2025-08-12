@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-identity';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './Play.css';
 
 function Play() {
@@ -333,6 +334,19 @@ function GuessDistribution({ stats }) {
   // get all possible ranks
   const allRanks = ["S", "X", "A", "B+", "B", "C", "D", "E", "H"];
   
+  // Custom colors for each rank
+  const rankColors = {
+    "S": "#C2185B",    // Dark bright pink
+    "X": "#4CAF50",    // Medium green
+    "A": "#F44336",    // Bright red
+    "B+": "#00BCD4",   // Turquoise
+    "B": "#E91E63",    // Light pink
+    "C": "#2196F3",    // Average blue
+    "D": "#03A9F4",    // Bright blue
+    "E": "#FF5722",    // Orange-red
+    "H": "#8D6E63"     // Light brown
+  };
+  
   // create map of all ranks with counts
   const distributionMap = {};
   allRanks.forEach(rank => {
@@ -346,60 +360,140 @@ function GuessDistribution({ stats }) {
     });
   }
   
-  // calculate highest count for scaling
-  const maxCount = Math.max(...Object.values(distributionMap), 1);
-  
-  // generate bar colors based on actual rank
-  const getBarColor = (rank) => {
-    if (rank === stats.rank) {
-      return '#4CAF50'; // green for correct rank
+  // prepare data for recharts
+  const chartData = allRanks.map(rank => {
+    const count = distributionMap[rank] || 0;
+    const percentage = stats.totalGuesses > 0 
+      ? Math.round((count / stats.totalGuesses) * 100) 
+      : 0;
+    
+    return {
+      rank: rank,
+      count: count,
+      percentage: percentage,
+      isCorrect: rank === stats.rank,
+      color: rankColors[rank]
+    };
+  });
+
+  // Custom shaped bar component
+  const CustomShapeBar = (props) => {
+    const { fill, payload, x, y, width, height } = props;
+    const barColor = payload.color; // Use custom rank color
+    
+    // Create a custom hexagonal/diamond shape
+    const shapeHeight = height;
+    const shapeWidth = width;
+    const centerX = x + shapeWidth / 2;
+    const topY = y;
+    const bottomY = y + shapeHeight;
+    
+    // Create path for custom shape (hexagon-like)
+    const path = `
+      M ${centerX} ${topY}
+      L ${x + shapeWidth * 0.8} ${topY + shapeHeight * 0.2}
+      L ${x + shapeWidth} ${bottomY - shapeHeight * 0.1}
+      L ${centerX} ${bottomY}
+      L ${x} ${bottomY - shapeHeight * 0.1}
+      L ${x + shapeWidth * 0.2} ${topY + shapeHeight * 0.2}
+      Z
+    `;
+
+    return (
+      <g>
+        {/* Gradient definition */}
+        <defs>
+          <linearGradient id={`gradient-${payload.rank}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={barColor} stopOpacity={1} />
+            <stop offset="100%" stopColor={barColor} stopOpacity={0.7} />
+          </linearGradient>
+        </defs>
+        
+        {/* Custom shaped bar */}
+        <path
+          d={path}
+          fill={`url(#gradient-${payload.rank})`}
+          stroke={barColor}
+          strokeWidth={2}
+          style={{
+            filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.3))',
+            transition: 'all 0.3s ease'
+          }}
+        />
+        
+        {/* Glow effect for correct rank */}
+        {payload.isCorrect && (
+          <path
+            d={path}
+            fill="none"
+            stroke={barColor}
+            strokeWidth={4}
+            opacity={0.8}
+            style={{
+              filter: 'blur(3px)'
+            }}
+          />
+        )}
+      </g>
+    );
+  };
+
+  // custom tooltip
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          padding: '12px',
+          borderRadius: '8px',
+          color: 'white',
+          border: `2px solid ${data.color}`,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+        }}>
+          <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: data.color }}>{`Rank: ${label}`}</p>
+          <p style={{ margin: '0 0 4px 0' }}>{`Count: ${data.count}`}</p>
+          <p style={{ margin: '0 0 4px 0' }}>{`Percentage: ${data.percentage}%`}</p>
+          {data.isCorrect && (
+            <p style={{ color: data.color, margin: '4px 0 0 0', fontWeight: 'bold' }}>
+              ✓ Correct Rank
+            </p>
+          )}
+        </div>
+      );
     }
-    return '#2196F3'; // blue for other ranks
+    return null;
   };
   
   return (
-    <div className="guess-distribution">
-      {allRanks.map(rank => {
-        const count = distributionMap[rank] || 0;
-        const percentage = stats.totalGuesses > 0 
-          ? Math.round((count / stats.totalGuesses) * 100) 
-          : 0;
-        const barWidth = Math.max((percentage / 100) * 100, percentage > 0 ? 5 : 0); // minimum 5% width if there are guesses
-        
-        return (
-          <div key={rank} className="distribution-row" style={{ display: 'flex', alignItems: 'center', margin: '4px 0' }}>
-            <div className="rank-label" style={{ width: '40px', textAlign: 'right', marginRight: '10px' }}>
-              {rank}
-            </div>
-            <div 
-              className="bar" 
-              style={{ 
-                width: `${barWidth}%`, 
-                backgroundColor: getBarColor(rank),
-                height: '24px',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                color: 'white',
-                paddingRight: '8px',
-                transition: 'width 1s ease-in-out',
-                minWidth: count > 0 ? '40px' : '0',
-                position: 'relative'
-              }}
-            >
-              {count > 0 && (
-                <span style={{ position: 'absolute', right: '8px' }}>
-                  {percentage}%
-                </span>
-              )}
-            </div>
-            <div className="count-label" style={{ marginLeft: '10px', minWidth: '30px' }}>
-              {count}
-            </div>
-          </div>
-        );
-      })}
+    <div className="guess-distribution" style={{ width: '100%', height: '350px' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={chartData}
+          margin={{
+            top: 30,
+            right: 30,
+            left: 20,
+            bottom: 10,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+          <XAxis 
+            dataKey="rank" 
+            tick={{ fontSize: 14, fontWeight: 'bold' }}
+            axisLine={{ stroke: '#666' }}
+          />
+          <YAxis 
+            tick={{ fontSize: 12 }}
+            axisLine={{ stroke: '#666' }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Bar 
+            dataKey="count" 
+            shape={<CustomShapeBar />}
+          />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
