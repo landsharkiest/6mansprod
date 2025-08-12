@@ -339,10 +339,10 @@ function GuessDistribution({ stats }) {
     "S": "#C2185B",    // Dark bright pink
     "X": "#4CAF50",    // Medium green
     "A": "#F44336",    // Bright red
-    "B+": "#00BCD4",   // Turquoise
+    "B+": "#1916b9ff",   // Darker turquoise
     "B": "#E91E63",    // Light pink
     "C": "#2196F3",    // Average blue
-    "D": "#03A9F4",    // Bright blue
+    "D": "#81D4FA",    // Lighter blue
     "E": "#FF5722",    // Orange-red
     "H": "#8D6E63"     // Light brown
   };
@@ -472,10 +472,11 @@ function GuessDistribution({ stats }) {
           data={chartData}
           margin={{
             top: 30,
-            right: 30,
-            left: 20,
+            right: 50,
+            left: 50,
             bottom: 10,
           }}
+          barCategoryGap="20%"
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
           <XAxis 
