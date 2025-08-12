@@ -118,51 +118,83 @@ function App() {
             <div className="App">
               <header className="App-header">
                 {user && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '20px',
-                    right: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                    padding: '10px 15px',
-                    borderRadius: '25px',
-                    zIndex: 1000
-                  }}>
-                    <img 
-                      src={user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`} 
-                      alt="Avatar" 
-                      style={{
-                        width: '40px', 
-                        height: '40px', 
-                        borderRadius: '50%',
-                        border: '2px solid white'
-                      }} 
-                    />
-                    <span style={{
-                      color: 'white',
-                      fontWeight: 'bold',
-                      fontSize: '16px'
-                    }}>
-                      {user.username}
-                    </span>
-                    <button 
-                      onClick={logout}
-                      style={{
-                        marginLeft: '10px',
-                        padding: '5px 10px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '15px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      Logout
-                    </button>
-                  </div>
+                  (() => {
+                    const isMobile = window.innerWidth <= 600;
+                    if (isMobile) {
+                      return (
+                        <div style={{
+                          position: 'fixed',
+                          top: '10px',
+                          right: '10px',
+                          zIndex: 1000,
+                        }}>
+                          <img
+                            src={user.avatar
+                              ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+                              : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`}
+                            alt="Avatar"
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '50%',
+                              border: '2px solid white',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                            }}
+                          />
+                        </div>
+                      );
+                    }
+                    // Desktop: show full profile info
+                    return (
+                      <div style={{
+                        position: 'absolute',
+                        top: '20px',
+                        right: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                        padding: '10px 15px',
+                        borderRadius: '25px',
+                        zIndex: 1000
+                      }}>
+                        <img
+                          src={user.avatar
+                            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+                            : `https://cdn.discordapp.com/embed/avatars/${user.discriminator % 5}.png`}
+                          alt="Avatar"
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            border: '2px solid white'
+                          }}
+                        />
+                        <span style={{
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '16px'
+                        }}>
+                          {user.username}
+                        </span>
+                        <button
+                          onClick={logout}
+                          style={{
+                            marginLeft: '10px',
+                            padding: '5px 10px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '15px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    );
+                  })()
                 )}
                 <h1>6mansdle</h1>
                 {loading ? (
@@ -326,27 +358,55 @@ function DiscordLoginButton() {
 
 // Update Log Component
 function UpdateLog({ updates }) {
+  // Desktop style (left)
+  const desktopStyle = {
+    position: 'absolute',
+    top: '20px',
+    left: '20px',
+    width: '280px',
+    maxHeight: '400px',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: '10px',
+    padding: '15px',
+    color: 'white',
+    fontSize: '14px',
+    overflowY: 'auto',
+    zIndex: 1000,
+    marginTop: '10%',
+    marginLeft: '5%',
+    boxSizing: 'border-box',
+    transition: 'all 0.3s'
+  };
+
+  // Mobile style (fixed, scrollable)
+  const mobileStyle = {
+    position: 'fixed',
+    left: '50%',
+    bottom: '0',
+    transform: 'translateX(-50%)',
+    width: '95vw',
+    maxWidth: '400px',
+    maxHeight: '40vh',
+    fontSize: '12px',
+    margin: '0',
+    padding: '10px',
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+    borderRadius: '10px 10px 0 0',
+    overflowY: 'auto',
+    zIndex: 1000,
+    boxSizing: 'border-box'
+  };
+
+  // Use desktop style if width > 600px, else mobile style
+  const isMobile = window.innerWidth <= 600;
+  const style = isMobile ? mobileStyle : desktopStyle;
+
   return (
-    <div style={{
-      position: 'absolute',
-      top: '20px',
-      left: '20px',
-      width: '280px',
-      maxHeight: '400px',
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      border: '1px solid rgba(255, 255, 255, 0.3)',
-      borderRadius: '10px',
-      padding: '15px',
-      color: 'white',
-      fontSize: '14px',
-      overflowY: 'auto',
-      zIndex: 1000,
-      marginTop: '10%',
-      marginLeft: '5%'
-    }}>
+    <div style={style}>
       <h3 style={{
         margin: '0 0 15px 0',
-        fontSize: '18px',
+        fontSize: isMobile ? '16px' : '18px',
         textAlign: 'center',
         borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
         paddingBottom: '10px'
