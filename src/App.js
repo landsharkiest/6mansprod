@@ -26,7 +26,7 @@ function App() {
           }
         />
         <Route
-          path="/*"
+          path="/"
           element={
             <div className="App">
               <header className="App-header">
@@ -159,7 +159,7 @@ function UploadClips() {
 
 function DiscordLoginButton() {
   return (
-    <a href="https://6mansdle.com/auth/discord">
+    <a href="http://ec2-204-236-200-58.compute-1.amazonaws.com:3001/auth/discord">
       <button style={{
         backgroundColor: '#5865F2',
         color: 'white',
