@@ -16,9 +16,10 @@ function App() {
   const updates = [
     {
       date: "Aug 12, 2025",
-      version: "v1.2.0",
+      version: "v1.2.1",
       changes: [
-        "Added Discord login functionality",
+        "Fixed SSL security warnings",
+        "Added Discord login functionality", 
         "User profiles now display in top right",
         "Fixed video encoding issues"
       ]
