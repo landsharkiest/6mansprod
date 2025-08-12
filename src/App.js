@@ -14,6 +14,39 @@ function App() {
 
   // Check if user is logged in when component mounts
   React.useEffect(() => {
+    // Check URL for user data from Discord callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const userParam = urlParams.get('user');
+    
+    if (userParam) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userParam));
+        setUser(userData);
+        localStorage.setItem('discordUser', JSON.stringify(userData));
+        
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setLoading(false);
+        return;
+      } catch (error) {
+        console.error('Error parsing user data from URL:', error);
+      }
+    }
+    
+    // Check localStorage for existing user
+    const savedUser = localStorage.getItem('discordUser');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+        setLoading(false);
+        return;
+      } catch (error) {
+        console.error('Error parsing saved user data:', error);
+        localStorage.removeItem('discordUser');
+      }
+    }
+    
+    // If no user data found, try API call (fallback)
     fetch('http://ec2-204-236-200-58.compute-1.amazonaws.com:3001/api/user', {
       credentials: 'include'
     })
@@ -21,11 +54,17 @@ function App() {
     .then(data => {
       if (data.authenticated) {
         setUser(data.user);
+        localStorage.setItem('discordUser', JSON.stringify(data.user));
       }
     })
     .catch(error => console.log('Not logged in'))
     .finally(() => setLoading(false));
   }, []);
+
+  const logout = () => {
+    localStorage.removeItem('discordUser');
+    setUser(null);
+  };
   
 
   const { getRootProps, getInputProps } = useDropzone();
@@ -77,6 +116,21 @@ function App() {
                     }}>
                       {user.username}
                     </span>
+                    <button 
+                      onClick={logout}
+                      style={{
+                        marginLeft: '10px',
+                        padding: '5px 10px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '15px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
+                    >
+                      Logout
+                    </button>
                   </div>
                 )}
                 <h1>6mansdle</h1>

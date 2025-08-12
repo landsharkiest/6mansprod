@@ -441,7 +441,16 @@ app.get('/auth/discord/callback',
     passport.authenticate('discord', { failureRedirect: 'https://6mansdle.com/' }),
     (req, res) => {
         console.log('Discord callback successful for user:', req.user?.username);
-        res.redirect('https://6mansdle.com/');
+        
+        // Encode user data to pass back to frontend
+        const userData = encodeURIComponent(JSON.stringify({
+            id: req.user.id,
+            username: req.user.username,
+            avatar: req.user.avatar,
+            discriminator: req.user.discriminator
+        }));
+        
+        res.redirect(`https://6mansdle.com/?user=${userData}`);
     }
 );
 
