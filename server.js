@@ -2,9 +2,15 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 
+/**
+ * Express application for 6mansdle backend.
+ * Handles API endpoints for guesses, statistics, and Discord authentication.
+ */
 const app = express();
 
-// Add manual CORS middleware first
+/**
+ * Manual CORS middleware for allowed origins and headers.
+ */
 app.use((req, res, next) => {
     const allowedOrigins = ['https://6mansdle.com', 'https://www.6mansdle.com', 'https://localhost:3000'];
     const origin = req.headers.origin;
@@ -33,7 +39,6 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Configure proper error handling for Express
 app.use((err, req, res, next) => {
   console.error('Express error handler:', err);
   res.status(500).json({ 
@@ -63,6 +68,10 @@ const pool = new Pool({
     }
 });
 
+/**
+ * Initializes the database connection and tables.
+ * Falls back to in-memory store if connection fails.
+ */
 async function initializeDatabase() {
     try {
         // Test connection first
@@ -102,11 +111,17 @@ async function initializeDatabase() {
 
 initializeDatabase();
 
-// Root route for health checks
+/**
+ * Health check endpoint.
+ */
 app.get('/', (req, res) => {
     res.json({ status: 'Server is running', message: 'API endpoints available at /api/*' });
 });
 
+/**
+ * Records a new guess for a video clip.
+ * Supports both database and in-memory fallback.
+ */
 app.post('/api/guesses', async (req, res) => {
     const { videoId, guessedRank, actualRank, isCorrect } = req.body;
     
@@ -212,6 +227,10 @@ app.post('/api/guesses', async (req, res) => {
     }
 });
 
+/**
+ * Returns statistics for a specific video clip.
+ * Supports both database and in-memory fallback.
+ */
 app.get('/api/stats/video/:videoKey', async (req, res) => {
     const { videoKey } = req.params;
     
@@ -289,6 +308,9 @@ app.get('/api/stats/video/:videoKey', async (req, res) => {
     }
 });
 
+/**
+ * Returns overall statistics for all guesses.
+ */
 app.get('/api/stats', async (req, res) => {
     try {
         const overallResult = await pool.query(
@@ -336,7 +358,9 @@ app.get('/api/stats', async (req, res) => {
     }
 });
 
-// Simple test endpoint
+/**
+ * Simple test endpoint for server and database connectivity.
+ */
 app.get('/api/test', async (req, res) => {
     try {
         // Test database connection
@@ -366,7 +390,7 @@ app.get('/api/test', async (req, res) => {
 
 const port = process.env.port || 3001;
 
-// Discord Authentication Setup - BEFORE starting server
+// Discord Authentication Setup
 const passport = require('passport');
 const session = require('express-session');
 const DiscordStrategy = require('passport-discord').Strategy;
@@ -389,7 +413,9 @@ if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Session configuration
+/**
+ * Session configuration for authentication.
+ */
 app.use(session({
     secret: SESSION_SECRET,
     resave: false,
@@ -401,11 +427,12 @@ app.use(session({
     }
 }));
 
-// Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Discord Strategy
+/**
+ * Discord OAuth strategy setup.
+ */
 if (DISCORD_CLIENT_ID && DISCORD_CLIENT_SECRET) {
     passport.use(new DiscordStrategy({
         clientID: DISCORD_CLIENT_ID,
@@ -418,17 +445,25 @@ if (DISCORD_CLIENT_ID && DISCORD_CLIENT_SECRET) {
     }));
 }
 
+/**
+ * Serializes user for session.
+ */
 passport.serializeUser((user, done) => {
     console.log('Serializing user:', user.username);
     done(null, user);
 });
 
+/**
+ * Deserializes user from session.
+ */
 passport.deserializeUser((obj, done) => {
     console.log('Deserializing user:', obj.username);
     done(null, obj);
 });
 
-// Discord auth routes
+/**
+ * Discord authentication route.
+ */
 app.get('/auth/discord', (req, res, next) => {
     console.log('Discord auth route hit');
     if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
@@ -437,6 +472,9 @@ app.get('/auth/discord', (req, res, next) => {
     passport.authenticate('discord')(req, res, next);
 });
 
+/**
+ * Discord OAuth callback route.
+ */
 app.get('/auth/discord/callback', 
     passport.authenticate('discord', { failureRedirect: 'https://6mansdle.com/' }),
     (req, res) => {
@@ -454,7 +492,9 @@ app.get('/auth/discord/callback',
     }
 );
 
-// Endpoint to return logged-in user info
+/**
+ * Returns authenticated user info.
+ */
 app.get('/api/user', (req, res) => {
     console.log('User endpoint hit. Authenticated:', req.isAuthenticated ? req.isAuthenticated() : false);
     console.log('Session:', req.session);

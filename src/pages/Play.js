@@ -5,6 +5,11 @@ import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-id
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './Play.css';
 
+/**
+ * Play component - Main gameplay page for guessing ranks from video clips.
+ * Handles fetching clips from S3, submitting guesses, and displaying statistics.
+ * @returns {JSX.Element}
+ */
 function Play() {
   const REGION = "us-east-1";
   const BUCKET = "6mans-clip-bucket";
@@ -38,7 +43,13 @@ function Play() {
   // Sleep function for retry delays
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
   
-  // store guess locally and delete after successful server save
+  /**
+   * Stores a guess locally in localStorage for offline support.
+   * @param {string} videoKey
+   * @param {string} guessedRank
+   * @param {string} actualRank
+   * @param {boolean} isCorrect
+   */
   const storeGuessLocally = (videoKey, guessedRank, actualRank, isCorrect) => {
     try {
       const localGuess = {
@@ -54,7 +65,9 @@ function Play() {
     }
   };
 
-  // delete local guess after successful server save
+  /**
+   * Deletes the locally stored guess after successful server save.
+   */
   const deleteLocalGuess = () => {
     try {
       localStorage.removeItem('pendingGuess');
@@ -63,8 +76,11 @@ function Play() {
     }
   };
   
-  
   useEffect(() => {
+    /**
+     * Fetches video files from S3, with caching and retry logic.
+     * @param {boolean} forceNew - If true, bypass cache and fetch fresh data.
+     */
     async function fetchVideos(forceNew = false) {
       // Check if we have cached data that's still valid (unless forcing new)
       const now = Date.now();
@@ -117,6 +133,11 @@ function Play() {
       setLoading(false);
     }
     
+    /**
+     * Selects a random video from the provided file list, avoiding repeats.
+     * Extracts the rank from the filename.
+     * @param {Array} files - Array of S3 file objects.
+     */
     function selectRandomVideo(files) {
       if (files.length > 0) {
         // Filter out the previous clip to avoid back-to-back repeats
@@ -157,8 +178,13 @@ function Play() {
     fetchVideosRef.current = fetchVideos;
     
     fetchVideos();
-  }, []); // Empty dependency array - only run on mount
+  }, []); // Only run on mount
 
+  /**
+   * Handles the user's rank guess submission.
+   * Saves guess locally, attempts to send to server, and fetches statistics.
+   * @param {string} guessedRank
+   */
   const handleGuessSubmit = async (guessedRank) => {
     // compare guessed rank with actual rank
     const isCorrect = guessedRank === actualRank;
@@ -220,6 +246,9 @@ function Play() {
     }
   };
 
+  /**
+   * Resets state and fetches a new video for another round.
+   */
   const handlePlayAgain = () => {
     setGuessResult(null);
     setLoading(true);
@@ -334,6 +363,12 @@ function Play() {
   );
 }
 
+/**
+ * GuessRank component - Renders rank selection buttons for guessing.
+ * @param {Object} props
+ * @param {function} props.onGuess - Callback for when a rank is guessed.
+ * @returns {JSX.Element}
+ */
 function GuessRank({ onGuess }) {
   const ranks = ["S", "X", "A", "B+", "B", "C", "D", "E", "H"];
   return (
@@ -365,6 +400,12 @@ function GuessRank({ onGuess }) {
   );
 }
 
+/**
+ * GuessDistribution component - Displays guess distribution statistics as a custom bar chart.
+ * @param {Object} props
+ * @param {Object} props.stats - Statistics data for the current video.
+ * @returns {JSX.Element}
+ */
 function GuessDistribution({ stats }) {
   // get all possible ranks
   const allRanks = ["S", "X", "A", "B+", "B", "C", "D", "E", "H"];
@@ -411,7 +452,11 @@ function GuessDistribution({ stats }) {
     };
   });
 
-  // Custom shaped bar component
+  /**
+   * Custom bar shape for the distribution chart.
+   * @param {Object} props
+   * @returns {JSX.Element}
+   */
   const CustomShapeBar = (props) => {
     const { payload, x, y, width, height } = props;
     const barColor = payload.color; // Use custom rank color
@@ -473,7 +518,11 @@ function GuessDistribution({ stats }) {
     );
   };
 
-  // custom tooltip
+  /**
+   * Custom tooltip for the distribution chart.
+   * @param {Object} props
+   * @returns {JSX.Element|null}
+   */
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;

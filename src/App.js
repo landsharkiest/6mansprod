@@ -7,6 +7,11 @@ import { fromCognitoIdentityPool } from '@aws-sdk/credential-provider-cognito-id
 import { motion } from 'framer-motion';
 import React from 'react';
 
+/**
+ * Main App component for 6mansdle.
+ * Handles routing, authentication, and renders main pages.
+ * @returns {JSX.Element}
+ */
 function App() {
   const [user, setUser] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -344,6 +349,10 @@ function App() {
   );
 }
 
+/**
+ * PlayGuest component - Renders the play button for guest users.
+ * @returns {JSX.Element}
+ */
 function PlayGuest() {
   const navigate = useNavigate();
   return (
@@ -355,7 +364,10 @@ function PlayGuest() {
   );
 }
 
-// s3 upload component using cognito identity pool
+/**
+ * UploadClips component - Handles uploading video clips to S3 with rank selection.
+ * @returns {JSX.Element}
+ */
 function UploadClips() {
   const REGION = "us-east-1";
   const BUCKET = "6mans-clip-bucket";
@@ -454,7 +466,10 @@ function UploadClips() {
   );
 }
 
-// discord oauth login redirect
+/**
+ * DiscordLoginButton component - Renders Discord OAuth login button.
+ * @returns {JSX.Element}
+ */
 function DiscordLoginButton() {
   return (
     <a href="https://backend.6mansdle.com/auth/discord">
@@ -474,7 +489,12 @@ function DiscordLoginButton() {
   );
 }
 
-// Update Log Component
+/**
+ * UpdateLog component - Displays update log for the application.
+ * @param {Object} props
+ * @param {Array} props.updates - Array of update objects.
+ * @returns {JSX.Element}
+ */
 function UpdateLog({ updates }) {
   // Desktop style (left)
   const desktopStyle = {
