@@ -1,0 +1,99 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import type { DailyResponse, GuessResponse } from '@6mansdle/shared';
+import { api, ApiRequestError } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
+import { GameBoard } from '../components/GameBoard';
+
+const GUEST_KEY = 'sixmansdle.dailyGuest';
+
+/** Guests get their daily result remembered in this browser only. */
+function loadGuestResult(date: string): GuessResponse | null {
+  try {
+    const raw = localStorage.getItem(GUEST_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as { date: string; result: GuessResponse };
+    return saved.date === date ? saved.result : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveGuestResult(date: string, result: GuessResponse) {
+  try {
+    localStorage.setItem(GUEST_KEY, JSON.stringify({ date, result }));
+  } catch {
+    /* storage unavailable, nothing to do */
+  }
+}
+
+function useCountdown() {
+  const [text, setText] = useState('');
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+      const s = Math.max(0, Math.floor((next - now.getTime()) / 1000));
+      const h = String(Math.floor(s / 3600)).padStart(2, '0');
+      const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+      const sec = String(s % 60).padStart(2, '0');
+      setText(`${h}:${m}:${sec}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return text;
+}
+
+export function DailyPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [daily, setDaily] = useState<DailyResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const countdown = useCountdown();
+
+  useEffect(() => {
+    if (authLoading) return;
+    api
+      .daily()
+      .then((d) => setDaily(user ? d : { ...d, result: d.result ?? loadGuestResult(d.date) }))
+      .catch((err) => setError(err instanceof ApiRequestError ? err.message : 'Could not load the daily'));
+  }, [authLoading, user]);
+
+  return (
+    <div className="page container">
+      <h1 className="page-title">Daily challenge</h1>
+      <p className="page-subtitle">
+        {daily ? `${daily.date} (UTC)` : ''} · next clip in <span className="countdown">{countdown}</span>
+      </p>
+
+      {!user && !authLoading && (
+        <div className="notice" style={{ maxWidth: 900, margin: '0 auto 20px' }}>
+          You're playing as a guest. <a href={api.loginUrl} style={{ color: '#fff', fontWeight: 600 }}>Sign in with Discord</a> to
+          keep a streak and appear on the <Link to="/leaderboard" style={{ color: '#fff', fontWeight: 600 }}>leaderboard</Link>.
+        </div>
+      )}
+
+      {error && <div className="notice error">{error}</div>}
+      {!daily && !error && <div className="spinner" />}
+      {daily && (
+        <GameBoard
+          clip={daily.clip}
+          mode="daily"
+          initialResult={daily.result}
+          onResult={(r) => {
+            if (!user) saveGuestResult(daily.date, r);
+          }}
+          footer={
+            <div style={{ display: 'grid', gap: 12, justifyItems: 'center' }}>
+              <span className="muted">Come back tomorrow for a new clip.</span>
+              <Link to="/play" className="btn btn-lg">
+                Keep playing in endless mode
+              </Link>
+            </div>
+          }
+        />
+      )}
+    </div>
+  );
+}

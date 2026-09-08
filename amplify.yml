@@ -1,0 +1,21 @@
+# AWS Amplify Hosting build spec for the frontend (apps/web).
+# Set VITE_API_ORIGIN=https://backend.6mansdle.com in the Amplify app's environment variables,
+# and add a rewrite rule  </^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp)$)([^.]+$)/>  ->  /index.html (200)
+# so client-side routes like /daily load directly.
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm use 22 || true
+        - npm ci --no-audit --no-fund
+    build:
+      commands:
+        - npm run build -w apps/web
+  artifacts:
+    baseDirectory: apps/web/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
