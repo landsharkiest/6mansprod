@@ -9,7 +9,10 @@ export default async function globalSetup(): Promise<void> {
   process.env.NODE_ENV = 'test';
   process.env.WEB_ORIGIN = 'http://localhost:5173';
   process.env.API_ORIGIN = 'http://localhost:3001';
-  process.env.DATABASE_URL = 'postgres://postgres:postgres@localhost:5432/sixmansdle_test';
+  // Override with TEST_DB_NAME so several worktrees can run the suite at once without truncating
+// each other's tables mid-run.
+const TEST_DB_NAME = process.env.TEST_DB_NAME || 'sixmansdle_test';
+process.env.DATABASE_URL = `postgres://postgres:postgres@localhost:5432/${TEST_DB_NAME}`;
   process.env.DATABASE_SSL = 'false';
   process.env.SESSION_SECRET = 'test-secret-test-secret-32-chars-long';
   process.env.S3_BUCKET = 'test-bucket';
@@ -22,9 +25,9 @@ export default async function globalSetup(): Promise<void> {
   });
   await admin.connect();
   try {
-    const { rows } = await admin.query('SELECT 1 FROM pg_database WHERE datname = $1', ['sixmansdle_test']);
+    const { rows } = await admin.query('SELECT 1 FROM pg_database WHERE datname = $1', [TEST_DB_NAME]);
     if (rows.length === 0) {
-      await admin.query('CREATE DATABASE sixmansdle_test');
+      await admin.query(`CREATE DATABASE ${TEST_DB_NAME}`);
     }
   } finally {
     await admin.end();

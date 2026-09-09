@@ -14,7 +14,7 @@ export default defineConfig({
       NODE_ENV: 'test',
       WEB_ORIGIN: 'http://localhost:5173',
       API_ORIGIN: 'http://localhost:3001',
-      DATABASE_URL: 'postgres://postgres:postgres@localhost:5432/sixmansdle_test',
+      DATABASE_URL: `postgres://postgres:postgres@localhost:5432/${process.env.TEST_DB_NAME || 'sixmansdle_test'}`,
       DATABASE_SSL: 'false',
       SESSION_SECRET: 'test-secret-test-secret-32-chars-long',
       S3_BUCKET: 'test-bucket',
