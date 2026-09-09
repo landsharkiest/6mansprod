@@ -6,7 +6,7 @@ import { RANKS } from '@6mansdle/shared';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { parseBody, parseQuery } from '../lib/validate.js';
 import { pickRandomApprovedClip, toPlayable, clipStats, getClip } from '../services/clips.js';
-import { getOrCreateDaily, effectiveStreak } from '../services/daily.js';
+import { getOrCreateDaily, effectiveStreak, getDailyNumber } from '../services/daily.js';
 import { submitGuess } from '../services/guesses.js';
 import { pool } from '../db/pool.js';
 import { rankDistance } from '@6mansdle/shared';
@@ -60,7 +60,8 @@ gameRouter.get(
       }
     }
 
-    const body: DailyResponse = { date: daily.day, clip: await toPlayable(daily.clip), result };
+    const number = await getDailyNumber(daily.day).catch(() => 1);
+    const body: DailyResponse = { date: daily.day, number, clip: await toPlayable(daily.clip), result };
     res.json(body);
   }),
 );

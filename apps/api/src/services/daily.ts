@@ -70,6 +70,18 @@ async function loadDaily(day: string): Promise<DailyRow | null> {
   };
 }
 
+/**
+ * The daily's ordinal number: days since the first daily_challenges row, first day = #1.
+ * Falls back to 1 if there's no row to anchor against (shouldn't happen once a daily exists).
+ */
+export async function getDailyNumber(day: string): Promise<number> {
+  const { rows } = await pool.query<{ number: number | null }>(
+    `SELECT (($1::date - MIN(day)) + 1)::int AS number FROM daily_challenges`,
+    [day],
+  );
+  return rows[0]?.number ?? 1;
+}
+
 export interface StreakState {
   current: number;
   best: number;

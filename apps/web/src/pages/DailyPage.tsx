@@ -4,6 +4,8 @@ import type { DailyResponse, GuessResponse } from '@6mansdle/shared';
 import { api, ApiRequestError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { GameBoard } from '../components/GameBoard';
+import { ShareButton } from '../components/ShareButton';
+import { buildShareText } from '../lib/share';
 
 const GUEST_KEY = 'sixmansdle.dailyGuest';
 
@@ -49,6 +51,7 @@ function useCountdown() {
 export function DailyPage() {
   const { user, loading: authLoading } = useAuth();
   const [daily, setDaily] = useState<DailyResponse | null>(null);
+  const [result, setResult] = useState<GuessResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const countdown = useCountdown();
 
@@ -56,9 +59,25 @@ export function DailyPage() {
     if (authLoading) return;
     api
       .daily()
-      .then((d) => setDaily(user ? d : { ...d, result: d.result ?? loadGuestResult(d.date) }))
+      .then((d) => {
+        const withGuestResult = user ? d : { ...d, result: d.result ?? loadGuestResult(d.date) };
+        setDaily(withGuestResult);
+        setResult(withGuestResult.result);
+      })
       .catch((err) => setError(err instanceof ApiRequestError ? err.message : 'Could not load the daily'));
   }, [authLoading, user]);
+
+  const shareText = daily && result
+    ? buildShareText({
+        number: daily.number,
+        date: daily.date,
+        correct: result.correct,
+        guessedRank: result.guessedRank,
+        actualRank: result.actualRank,
+        distance: result.distance,
+        streak: result.streak?.current,
+      })
+    : null;
 
   return (
     <div className="page container">
@@ -83,9 +102,11 @@ export function DailyPage() {
           initialResult={daily.result}
           onResult={(r) => {
             if (!user) saveGuestResult(daily.date, r);
+            setResult(r);
           }}
           footer={
             <div style={{ display: 'grid', gap: 12, justifyItems: 'center' }}>
+              {shareText && <ShareButton text={shareText} />}
               <span className="muted">Come back tomorrow for a new clip.</span>
               <Link to="/play" className="btn btn-lg">
                 Keep playing in endless mode

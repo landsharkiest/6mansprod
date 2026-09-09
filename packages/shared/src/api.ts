@@ -58,6 +58,8 @@ export interface GuessResponse {
 
 export interface DailyResponse {
   date: string;
+  /** Ordinal day number since the first daily challenge, first day = 1. */
+  number: number;
   clip: PlayableClip;
   /** Populated when the caller already guessed today. */
   result: GuessResponse | null;

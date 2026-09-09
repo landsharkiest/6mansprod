@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GameMode, GuessResponse, PlayableClip, Rank } from '@6mansdle/shared';
 import { api, ApiRequestError } from '../api/client';
 import { RankPicker } from './RankPicker';
 import { DistributionChart } from './DistributionChart';
+import { fireConfetti } from '../lib/confetti';
+import { isConfirmKey, isNativeActivationTarget, isReplayKey, isTypingTarget, rankForKey } from '../lib/shortcuts';
 
 interface Props {
   clip: PlayableClip;
@@ -12,6 +14,8 @@ interface Props {
   onResult?: (result: GuessResponse) => void;
   /** Rendered under the verdict (e.g. "Play another" or the countdown). */
   footer?: ReactNode;
+  /** Endless mode only: Enter/Space on the result screen triggers this ("Next clip"). */
+  onNext?: () => void;
 }
 
 const VERDICTS: Record<number, string> = {
@@ -20,10 +24,11 @@ const VERDICTS: Record<number, string> = {
   2: 'Two ranks off',
 };
 
-export function GameBoard({ clip, mode, initialResult = null, onResult, footer }: Props) {
+export function GameBoard({ clip, mode, initialResult = null, onResult, footer, onNext }: Props) {
   const [result, setResult] = useState<GuessResponse | null>(initialResult);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const guess = async (rank: Rank) => {
     if (pending || result) return;
@@ -40,16 +45,65 @@ export function GameBoard({ clip, mode, initialResult = null, onResult, footer }
     }
   };
 
+  // Confetti on a correct guess, in either mode. Cleans up on unmount / re-fire.
+  useEffect(() => {
+    if (!result?.correct) return;
+    const stop = fireConfetti();
+    return stop;
+  }, [result?.correct, clip.clipId]);
+
+  // Keyboard shortcuts: 1-9 pick a rank, R replays the clip, Enter/Space on the result
+  // screen advances to the next clip in endless mode. Disabled while typing in a form field.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isTypingTarget(document.activeElement)) return;
+
+      if (!result) {
+        const rank = rankForKey(e.key);
+        if (rank) {
+          e.preventDefault();
+          void guess(rank);
+          return;
+        }
+        if (isReplayKey(e.key)) {
+          e.preventDefault();
+          const video = videoRef.current;
+          if (video) {
+            video.currentTime = 0;
+            void video.play();
+          }
+          return;
+        }
+      } else if (mode === 'endless' && onNext && isConfirmKey(e.key) && !isNativeActivationTarget(document.activeElement)) {
+        e.preventDefault();
+        onNext();
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, mode, onNext, pending]);
+
   return (
     <div className="game">
       <div className="video-frame">
-        <video key={clip.clipId} src={clip.videoUrl} controls autoPlay playsInline preload="auto" />
+        <video
+          ref={videoRef}
+          key={clip.clipId}
+          src={clip.videoUrl}
+          controls
+          autoPlay
+          playsInline
+          preload="auto"
+        />
       </div>
 
       {!result && (
         <div className="card">
           <div className="card-title center">What rank is this player?</div>
           <RankPicker onPick={(r) => void guess(r)} disabled={pending} />
+          <p className="shortcut-hint">Tip: press 1–9 to pick a rank, R to replay</p>
           {error && (
             <div className="notice error" style={{ marginTop: 12 }}>
               {error}
