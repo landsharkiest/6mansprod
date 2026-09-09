@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildBlitzShareText, buildShareText } from './share';
+import { buildBlitzShareText, buildProfileShareText, buildShareText } from './share';
 
 const base = { number: 42, date: '2026-09-09' } as const;
 
@@ -101,5 +101,55 @@ describe('buildBlitzShareText', () => {
     const text = buildBlitzShareText({ score: 0, correctCount: 0, totalCount: 2, bestStreak: 0 });
     expect(text).toContain('0 pts · 0/2 correct');
     expect(text).toContain('🔥 best streak 0');
+  });
+});
+
+describe('buildProfileShareText', () => {
+  const base = { username: 'Ranger', accuracy: 63.4, bestStreak: 12, bestRun: 30, badgeCount: 5 } as const;
+
+  it('formats username, accuracy, best streak, best run, and badge count', () => {
+    const text = buildProfileShareText(base);
+    expect(text.split('\n')).toEqual([
+      'Ranger on 6mansdle',
+      '63.4% accuracy · 🔥 best streak 12 · best run 30',
+      '🎖️ 5 badges',
+      'https://6mansdle.com',
+    ]);
+  });
+
+  it('includes the top strength line when given', () => {
+    const text = buildProfileShareText({ ...base, topStrength: 'S' });
+    expect(text).toContain('💪 strongest at S');
+  });
+
+  it('omits the top strength line when not given', () => {
+    const text = buildProfileShareText(base);
+    expect(text).not.toContain('strongest');
+  });
+
+  it('uses singular "badge" for a count of 1', () => {
+    const text = buildProfileShareText({ ...base, badgeCount: 1 });
+    expect(text).toContain('🎖️ 1 badge');
+    expect(text).not.toContain('1 badges');
+  });
+
+  it('handles a zero badge count', () => {
+    const text = buildProfileShareText({ ...base, badgeCount: 0 });
+    expect(text).toContain('🎖️ 0 badges');
+  });
+
+  it('ends with the default profile URL', () => {
+    const text = buildProfileShareText(base);
+    expect(text.endsWith('https://6mansdle.com')).toBe(true);
+  });
+
+  it('accepts a custom url', () => {
+    const text = buildProfileShareText({ ...base, url: 'https://example.com/u/42' });
+    expect(text.endsWith('https://example.com/u/42')).toBe(true);
+  });
+
+  it('never includes a clip id or any clip-identifying field', () => {
+    const text = buildProfileShareText({ ...base, topStrength: 'A' });
+    expect(text).not.toMatch(/clip/i);
   });
 });

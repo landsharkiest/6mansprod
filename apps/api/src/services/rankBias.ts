@@ -6,7 +6,7 @@ import type { RankPairCount } from './confusionMatrix.js';
  * means the guess was *better* than the truth (RANKS is best-to-worst, so a lower index is
  * a better rank) and a negative value means the guess was worse.
  */
-function signedDistance(actualRank: Rank, guessedRank: Rank): number {
+export function signedDistance(actualRank: Rank, guessedRank: Rank): number {
   return RANKS.indexOf(actualRank) - RANKS.indexOf(guessedRank);
 }
 

@@ -4,6 +4,13 @@ import { resetDb, closePool } from './db.js';
 
 beforeEach(async () => {
   await resetDb();
+  // resetDb RESTART IDENTITYs every table, so user/clip ids are reused test to test. Aggregate
+  // endpoints cache per id (community stats, per-user insights) for real wall-clock seconds,
+  // which would otherwise leak one test's data into the next test that reuses the same id.
+  const { resetCommunityStatsCacheForTests } = await import('../../src/services/communityStats.js');
+  const { resetInsightsCacheForTests } = await import('../../src/services/insights.js');
+  resetCommunityStatsCacheForTests();
+  resetInsightsCacheForTests();
 });
 
 afterEach(async () => {

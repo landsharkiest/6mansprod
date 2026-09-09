@@ -190,6 +190,83 @@ export interface UserProfile {
   achievements: Array<{ id: string; earnedAt: string }>;
 }
 
+/** Minimum counted guesses before a profile's insights unlock. */
+export const INSIGHTS_MIN_GUESSES = 10;
+
+/** Number of weekly buckets in the accuracy-over-time chart. */
+export const INSIGHTS_WEEKS = 26;
+
+export interface AccuracyWeekBucket {
+  /** ISO date (UTC) of the Monday starting this week. */
+  weekStart: string;
+  guesses: number;
+  correct: number;
+  accuracy: number;
+}
+
+/** An actual rank the player often gets wrong, with their most common mistaken guess for it. */
+export interface BlindSpot {
+  actualRank: Rank;
+  totalGuesses: number;
+  correctGuesses: number;
+  accuracy: number;
+  /** Null if every guess for this rank happened to be correct (shouldn't occur — blind spots require a wrong guess). */
+  mostCommonWrongGuess: Rank | null;
+  mostCommonWrongGuessCount: number;
+}
+
+export interface RankStrength {
+  rank: Rank;
+  totalGuesses: number;
+  correctGuesses: number;
+  accuracy: number;
+}
+
+export interface VsCommunityRank {
+  rank: Rank;
+  /** Null if the player has never guessed on a clip of this actual rank. */
+  userAccuracy: number | null;
+  userGuesses: number;
+  communityAccuracy: number;
+}
+
+export interface ProfileInsightsBias {
+  /** Average signed rank distance across every counted guess. Null with no data. */
+  overall: number | null;
+  perRank: RankBias[];
+}
+
+export interface ProfileInsightsTotals {
+  guesses: number;
+  correct: number;
+  accuracy: number;
+}
+
+/** Returned instead of the full payload until a player has enough counted guesses. */
+export interface ProfileInsightsLocked {
+  locked: true;
+  /** Additional counted guesses needed to unlock. */
+  needed: number;
+}
+
+export interface ProfileInsightsUnlocked {
+  locked: false;
+  totals: ProfileInsightsTotals;
+  /** Oldest first, always INSIGHTS_WEEKS entries — weeks with no guesses are zero-filled. */
+  accuracyOverTime: AccuracyWeekBucket[];
+  personalConfusion: ConfusionCell[];
+  /** Top 3 actual ranks most often gotten wrong. Empty if the player has no wrong guesses. */
+  blindSpots: BlindSpot[];
+  /** Top 3 ranks by accuracy among ranks with at least 5 guesses. */
+  strengths: RankStrength[];
+  bias: ProfileInsightsBias;
+  vsCommunity: VsCommunityRank[];
+  /** Community-wide accuracy overall, for the accuracy-over-time chart's reference line. */
+  communityAccuracy: number;
+}
+
+export type ProfileInsights = ProfileInsightsLocked | ProfileInsightsUnlocked;
+
 export interface PresignUploadRequest {
   filename: string;
   contentType: string;

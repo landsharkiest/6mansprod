@@ -3,9 +3,10 @@ import { RANKS, RANK_COLORS, type ConfusionCell, type Rank } from '@6mansdle/sha
 
 /**
  * Actual rank (rows) vs guessed rank (columns), shaded by each cell's share of its row.
- * The diagonal (actual === guessed) is the "got it right" line.
+ * The diagonal (actual === guessed) is the "got it right" line. Used both for the community-wide
+ * matrix on the stats page and for a single player's own matrix on their profile.
  */
-export function ConfusionMatrix({ cells }: { cells: ConfusionCell[] }) {
+export function ConfusionMatrix({ cells, title }: { cells: ConfusionCell[]; title?: string }) {
   const [hover, setHover] = useState<{ actual: Rank; guessed: Rank } | null>(null);
 
   const rowTotals = new Map<Rank, number>();
@@ -16,7 +17,8 @@ export function ConfusionMatrix({ cells }: { cells: ConfusionCell[] }) {
 
   return (
     <div className="confusion-wrap">
-      <div className="confusion-grid" role="table" aria-label="Actual rank versus guessed rank">
+      {title && <div className="card-title">{title}</div>}
+      <div className="confusion-grid" role="table" aria-label={title ?? 'Actual rank versus guessed rank'}>
         <div className="confusion-corner" aria-hidden="true">
           <span>Actual \ Guessed</span>
         </div>

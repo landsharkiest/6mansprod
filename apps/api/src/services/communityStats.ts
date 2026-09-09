@@ -3,6 +3,7 @@ import { pool } from '../db/pool.js';
 import { buildConfusionMatrix, perRankAccuracyFromPairs, type RankPairCount } from './confusionMatrix.js';
 import { computeRankBias, pickRankBiasExtremes } from './rankBias.js';
 import { topClipsByAccuracy, type ClipGuessAgg } from './clipDifficulty.js';
+import { TtlCache } from './ttlCache.js';
 
 const MIN_GUESSES_FOR_CLIP_RANKING = 10;
 const CLIP_RANKING_LIMIT = 5;
@@ -78,4 +79,25 @@ export async function loadCommunityStats(): Promise<CommunityStats> {
     mostOverratedRank,
     mostUnderratedRank,
   };
+}
+
+// Community stats are aggregate-heavy (confusion matrix, per-clip rankings), so cache the
+// computed response for a minute rather than rebuilding it on every caller — both the community
+// stats route and the per-user insights endpoint (which needs community accuracy per rank to
+// compare against) share this one cache.
+const COMMUNITY_STATS_TTL_MS = 60_000;
+const communityStatsCache = new TtlCache<CommunityStats>(COMMUNITY_STATS_TTL_MS);
+
+export async function getCommunityStats(): Promise<CommunityStats> {
+  let stats = communityStatsCache.get();
+  if (!stats) {
+    stats = await loadCommunityStats();
+    communityStatsCache.set(stats);
+  }
+  return stats;
+}
+
+/** Test-only: clears the cache so integration tests see fresh aggregates after seeding data. */
+export function resetCommunityStatsCacheForTests(): void {
+  communityStatsCache.clear();
 }
