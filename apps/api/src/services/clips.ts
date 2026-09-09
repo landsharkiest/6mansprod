@@ -83,7 +83,7 @@ export const ADMIN_CLIP_SELECT = `
          c.created_at, c.reviewed_at, c.uploader_id, u.username AS uploader_name, c.hidden
     FROM clips c LEFT JOIN users u ON u.id = c.uploader_id`;
 
-export async function toAdminClip(r: AdminClipRow): Promise<AdminClip> {
+export async function toAdminClip(r: AdminClipRow & { uploader_approved?: number; uploader_rejected?: number }): Promise<AdminClip> {
   return {
     id: r.id,
     rank: r.rank,
@@ -96,8 +96,20 @@ export async function toAdminClip(r: AdminClipRow): Promise<AdminClip> {
     uploader: r.uploader_id !== null ? { id: r.uploader_id, username: r.uploader_name ?? 'unknown' } : null,
     videoUrl: await playbackUrl(r.s3_key),
     hidden: r.hidden,
+    ...(r.uploader_approved !== undefined || r.uploader_rejected !== undefined
+      ? { uploaderStats: { approved: r.uploader_approved ?? 0, rejected: r.uploader_rejected ?? 0 } }
+      : {}),
   };
 }
+
+/** Select used by the admin clip list: adds each clip's uploader's approved/rejected counts so
+ * the review queue can flag a spammy uploader at a glance. */
+export const ADMIN_CLIP_SELECT_WITH_UPLOADER_STATS = `
+  SELECT c.id, c.s3_key, c.rank, c.status, c.original_filename, c.content_type, c.size_bytes,
+         c.created_at, c.reviewed_at, c.uploader_id, u.username AS uploader_name, c.hidden,
+         (SELECT COUNT(*)::int FROM clips c2 WHERE c2.uploader_id = c.uploader_id AND c2.status = 'approved') AS uploader_approved,
+         (SELECT COUNT(*)::int FROM clips c2 WHERE c2.uploader_id = c.uploader_id AND c2.status = 'rejected') AS uploader_rejected
+    FROM clips c LEFT JOIN users u ON u.id = c.uploader_id`;
 
 export async function clipStats(db: Queryable, clip: Pick<ClipRow, 'id' | 'rank'>): Promise<ClipStats> {
   const { rows } = await db.query<{ guessed_rank: Rank; count: number }>(

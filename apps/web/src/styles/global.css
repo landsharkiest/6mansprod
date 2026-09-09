@@ -338,6 +338,12 @@ h3 {
   gap: 12px;
 }
 
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
 .stat {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -946,6 +952,45 @@ tr:last-child td {
   margin-bottom: 16px;
 }
 
+/* ---------- Bulk upload ---------- */
+.upload-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.upload-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px minmax(90px, 160px) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+
+.upload-row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.upload-row-progress {
+  min-width: 0;
+}
+
+.upload-row-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .field label {
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -1072,6 +1117,21 @@ textarea {
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.review-card.active {
+  outline: 2px solid var(--blurple);
+  outline-offset: 2px;
+}
+
+.uploader-stats {
+  margin-top: 6px;
+  font-size: 0.8rem;
+}
+
+.uploader-stats.warn {
+  color: #f2a0a4;
+  font-weight: 600;
 }
 
 .spinner {

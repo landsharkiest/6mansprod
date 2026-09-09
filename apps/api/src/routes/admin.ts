@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import type { AdminDashboard } from '@6mansdle/shared';
 import { RANKS } from '@6mansdle/shared';
 import { pool, withTransaction } from '../db/pool.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
@@ -7,13 +8,37 @@ import { notFound } from '../lib/errors.js';
 import { parseBody, parseQuery } from '../lib/validate.js';
 import { requireAdmin } from '../auth/middleware.js';
 import { deleteObject } from '../services/storage.js';
-import { ADMIN_CLIP_SELECT as selectClip, toAdminClip, type AdminClipRow } from '../services/clips.js';
+import {
+  ADMIN_CLIP_SELECT as selectClip,
+  ADMIN_CLIP_SELECT_WITH_UPLOADER_STATS as selectClipWithUploaderStats,
+  toAdminClip,
+  type AdminClipRow,
+} from '../services/clips.js';
 import { reportsRouter } from './reports.js';
 import { awardContributor } from '../services/achievements.js';
+import { loadDashboard } from '../services/dashboard.js';
+import { TtlCache } from '../services/ttlCache.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
 adminRouter.use(reportsRouter);
+
+// The dashboard aggregates over clips/guesses/users, so cache it briefly rather than recomputing
+// on every load of the admin dashboard tab.
+const DASHBOARD_TTL_MS = 30_000;
+const dashboardCache = new TtlCache<AdminDashboard>(DASHBOARD_TTL_MS);
+
+adminRouter.get(
+  '/dashboard',
+  asyncHandler(async (_req, res) => {
+    let body = dashboardCache.get();
+    if (!body) {
+      body = await loadDashboard();
+      dashboardCache.set(body);
+    }
+    res.json(body);
+  }),
+);
 
 adminRouter.get(
   '/clips',
@@ -25,8 +50,8 @@ adminRouter.get(
         limit: z.coerce.number().int().min(1).max(200).default(50),
       }),
     );
-    const { rows } = await pool.query<AdminClipRow>(
-      `${selectClip} WHERE c.status = $1 AND c.upload_completed ORDER BY c.created_at ASC LIMIT $2`,
+    const { rows } = await pool.query<AdminClipRow & { uploader_approved: number; uploader_rejected: number }>(
+      `${selectClipWithUploaderStats} WHERE c.status = $1 AND c.upload_completed ORDER BY c.created_at ASC LIMIT $2`,
       [status, limit],
     );
     res.json(await Promise.all(rows.map(toAdminClip)));
@@ -61,6 +86,32 @@ adminRouter.post(
       return fullRows[0]!;
     });
     res.json(await toAdminClip(full));
+  }),
+);
+
+const patchClipSchema = z
+  .object({
+    rank: z.enum(RANKS).optional(),
+    /** Manual hide/unhide, independent of the auto-hide safeguard's open-report count. */
+    hidden: z.boolean().optional(),
+  })
+  .refine((v) => v.rank !== undefined || v.hidden !== undefined, 'Provide rank or hidden');
+
+/** Quick-action patch used by the dashboard: fix a rank and/or toggle hidden without a full review. */
+adminRouter.patch(
+  '/clips/:id',
+  asyncHandler(async (req, res) => {
+    const id = z.string().uuid().parse(req.params.id);
+    const { rank, hidden } = parseBody(req, patchClipSchema);
+    const { rows } = await pool.query<{ id: string }>(
+      `UPDATE clips SET rank = COALESCE($2, rank), hidden = COALESCE($3, hidden)
+        WHERE id = $1 AND upload_completed
+        RETURNING id`,
+      [id, rank ?? null, hidden ?? null],
+    );
+    if (!rows[0]) throw notFound('Clip not found');
+    const { rows: fullRows } = await pool.query<AdminClipRow>(`${selectClip} WHERE c.id = $1`, [id]);
+    res.json(await toAdminClip(fullRows[0]!));
   }),
 );
 

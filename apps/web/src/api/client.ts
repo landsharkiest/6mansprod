@@ -1,5 +1,6 @@
 import type {
   AdminClip,
+  AdminDashboard,
   AdminReport,
   ChallengeGuessRequest,
   ChallengeGuessResponse,
@@ -25,6 +26,7 @@ import type {
   MeResponse,
   OverallStats,
   PlayableClip,
+  PatchClipRequest,
   PresignUploadRequest,
   PresignUploadResponse,
   Rank,
@@ -90,6 +92,10 @@ export const api = {
   reviewClip: (id: string, status: 'approved' | 'rejected', rank?: Rank) =>
     request<AdminClip>(`/api/admin/clips/${id}/review`, { method: 'POST', body: JSON.stringify({ status, rank }) }),
   deleteClip: (id: string) => request<void>(`/api/admin/clips/${id}`, { method: 'DELETE' }),
+  patchClip: (id: string, body: PatchClipRequest) =>
+    request<AdminClip>(`/api/admin/clips/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  adminDashboard: () => request<AdminDashboard>('/api/admin/dashboard'),
 
   reportClip: (clipId: string, body: ReportClipRequest) =>
     request<ClipReport>(`/api/clips/${clipId}/report`, { method: 'POST', body: JSON.stringify(body) }),
