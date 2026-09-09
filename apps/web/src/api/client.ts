@@ -2,9 +2,11 @@ import type {
   AdminClip,
   ClipStatus,
   DailyResponse,
+  GameMode,
   GuessRequest,
   GuessResponse,
-  LeaderboardEntry,
+  LeaderboardResponse,
+  LeaderboardSort,
   MeResponse,
   OverallStats,
   PlayableClip,
@@ -50,9 +52,10 @@ export const api = {
   guess: (body: GuessRequest) => request<GuessResponse>('/api/guesses', { method: 'POST', body: JSON.stringify(body) }),
 
   overallStats: () => request<OverallStats>('/api/stats/overall'),
-  leaderboard: (sort: 'streak' | 'best' | 'accuracy' | 'played' = 'streak') =>
-    request<LeaderboardEntry[]>(`/api/stats/leaderboard?sort=${sort}`),
+  leaderboard: (mode: GameMode = 'daily', sort: LeaderboardSort = 'streak') =>
+    request<LeaderboardResponse>(`/api/stats/leaderboard?mode=${mode}&sort=${sort}`),
   profile: () => request<UserProfile>('/api/me/profile'),
+  userProfile: (id: number | string) => request<UserProfile>(`/api/users/${id}/profile`),
 
   presignUpload: (body: PresignUploadRequest) =>
     request<PresignUploadResponse>('/api/uploads/presign', { method: 'POST', body: JSON.stringify(body) }),

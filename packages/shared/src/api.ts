@@ -48,8 +48,12 @@ export interface GuessResponse {
   actualRank: Rank;
   distance: number;
   stats: ClipStats;
-  /** Present for daily guesses by logged-in users. */
+  /** False when the user had already guessed this clip: recorded, but not counted toward stats. */
+  counted: boolean;
+  /** Daily streak, present for daily guesses by logged-in users. */
   streak?: { current: number; best: number };
+  /** Endless run (consecutive correct), present for endless guesses by logged-in users. */
+  run?: { current: number; best: number };
 }
 
 export interface DailyResponse {
@@ -67,13 +71,24 @@ export interface OverallStats {
   perRank: Array<{ rank: Rank; totalGuesses: number; correctGuesses: number }>;
 }
 
+export type LeaderboardSort = 'streak' | 'best' | 'accuracy' | 'played';
+
 export interface LeaderboardEntry {
   user: Pick<PublicUser, 'id' | 'username' | 'avatarUrl'>;
+  /** Daily: current day streak. Endless: current run of consecutive correct guesses. */
   currentStreak: number;
   bestStreak: number;
-  dailyPlayed: number;
-  dailyCorrect: number;
+  played: number;
+  correct: number;
   accuracy: number;
+}
+
+export interface LeaderboardResponse {
+  mode: GameMode;
+  sort: LeaderboardSort;
+  /** Plays required before a user is listed on the accuracy sort. */
+  minPlaysForAccuracy: number;
+  entries: LeaderboardEntry[];
 }
 
 export interface HistoryEntry {
@@ -86,10 +101,22 @@ export interface HistoryEntry {
   createdAt: string;
 }
 
+/** One calendar day (UTC) of activity for the profile heatmap. */
+export interface ActivityDay {
+  date: string;
+  /** Counted guesses across all modes. */
+  guesses: number;
+  daily: 'none' | 'correct' | 'wrong';
+}
+
 export interface UserProfile {
   user: PublicUser;
+  /** Last 365 days, oldest first, days with no activity omitted. */
+  activity: ActivityDay[];
+  memberSince: string;
   totals: { guesses: number; correct: number; accuracy: number };
   daily: { played: number; correct: number; currentStreak: number; bestStreak: number };
+  endless: { played: number; correct: number; currentRun: number; bestRun: number };
   recent: HistoryEntry[];
 }
 

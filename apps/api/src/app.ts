@@ -14,7 +14,7 @@ import { HttpError } from './lib/errors.js';
 import { authRouter } from './routes/auth.js';
 import { gameRouter } from './routes/game.js';
 import { statsRouter } from './routes/stats.js';
-import { meRouter } from './routes/me.js';
+import { meRouter, usersRouter } from './routes/me.js';
 import { uploadsRouter } from './routes/uploads.js';
 import { adminRouter } from './routes/admin.js';
 
@@ -63,13 +63,13 @@ export function createApp(): express.Express {
     }
   });
 
-  const guessLimiter = rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: true, legacyHeaders: false });
   const uploadLimiter = rateLimit({ windowMs: 60 * 60_000, limit: 30, standardHeaders: true, legacyHeaders: false });
 
   app.use('/api/auth', authRouter);
-  app.use('/api', guessLimiter, gameRouter);
+  app.use('/api', gameRouter);
   app.use('/api/stats', statsRouter);
   app.use('/api/me', meRouter);
+  app.use('/api/users', usersRouter);
   app.use('/api/uploads', uploadLimiter, uploadsRouter);
   app.use('/api/admin', adminRouter);
 

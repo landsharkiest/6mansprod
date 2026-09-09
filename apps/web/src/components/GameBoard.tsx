@@ -76,6 +76,21 @@ export function GameBoard({ clip, mode, initialResult = null, onResult, footer }
                 </span>
               </div>
             )}
+            {result.run && (
+              <div className="streak-banner">
+                <span>
+                  Run <b>{result.run.current}</b>
+                </span>
+                <span>
+                  Best run <b>{result.run.best}</b>
+                </span>
+              </div>
+            )}
+            {!result.counted && (
+              <p className="muted" style={{ fontSize: '0.85rem' }}>
+                You'd already answered this clip, so this one doesn't affect your run or accuracy.
+              </p>
+            )}
           </div>
 
           <div style={{ marginTop: 20 }}>

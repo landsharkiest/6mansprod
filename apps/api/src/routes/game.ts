@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import type { DailyResponse, GuessResponse, PlayableClip } from '@6mansdle/shared';
 import { RANKS } from '@6mansdle/shared';
@@ -11,6 +12,9 @@ import { pool } from '../db/pool.js';
 import { rankDistance } from '@6mansdle/shared';
 
 export const gameRouter = Router();
+
+/** Guess submissions only; reads elsewhere are unthrottled. */
+const guessLimiter = rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: true, legacyHeaders: false });
 
 const uuid = z.string().uuid();
 
@@ -50,6 +54,7 @@ gameRouter.get(
           actualRank: daily.clip.rank,
           distance: rankDistance(prior.guessed_rank, daily.clip.rank),
           stats: await clipStats(pool, daily.clip),
+          counted: true,
           streak: statsRow.rows[0] ? effectiveStreak(statsRow.rows[0]) : { current: 0, best: 0 },
         };
       }
@@ -68,6 +73,7 @@ const guessSchema = z.object({
 
 gameRouter.post(
   '/guesses',
+  guessLimiter,
   asyncHandler(async (req, res) => {
     const { clipId, rank, mode } = parseBody(req, guessSchema);
     const body = await submitGuess({ clipId, guessedRank: rank, mode, userId: req.user?.id ?? null });

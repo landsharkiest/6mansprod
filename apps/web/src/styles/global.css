@@ -798,3 +798,120 @@ input[type='text'] {
 .muted {
   color: var(--text-muted);
 }
+
+/* ---------- Profile / activity calendar ---------- */
+.profile-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.user-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.activity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-bottom: 12px;
+}
+
+.activity-head b {
+  color: var(--text);
+}
+
+.activity-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+}
+
+.activity-swatch {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+.activity-scroll {
+  overflow-x: auto;
+}
+
+.activity-svg {
+  display: block;
+}
+
+.activity-month {
+  fill: var(--text-dim);
+  font-size: 10px;
+}
+
+.activity-cell {
+  stroke: rgba(255, 255, 255, 0.04);
+  transition: opacity 0.1s;
+}
+
+.activity-cell:hover {
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.activity-cell.future {
+  fill: transparent;
+  stroke: none;
+}
+
+.lvl-0 {
+  fill: #1f1f1f;
+  background: #1f1f1f;
+}
+.lvl-1 {
+  fill: #12452a;
+  background: #12452a;
+}
+.lvl-2 {
+  fill: #1b6b3a;
+  background: #1b6b3a;
+}
+.lvl-3 {
+  fill: #23924c;
+  background: #23924c;
+}
+.lvl-4 {
+  fill: #2fc25f;
+  background: #2fc25f;
+}
+
+/* Daily outcome ring: gold when the daily was right, red when missed. */
+.activity-cell.daily-ok {
+  stroke: var(--gold);
+  stroke-width: 1.5;
+}
+.activity-cell.daily-miss {
+  stroke: var(--red);
+  stroke-width: 1.5;
+}
+
+.activity-tip {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  background: #111;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.activity-tip b {
+  color: var(--text);
+}

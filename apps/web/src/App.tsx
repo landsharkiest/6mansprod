@@ -25,6 +25,7 @@ export default function App() {
         <Route path="/play" element={<PlayPage />} />
         <Route path="/daily" element={<DailyPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/u/:id" element={<ProfilePage />} />
         <Route
           path="/profile"
           element={
