@@ -17,7 +17,7 @@ else
   sudo -u $APP_USER git -C "$REPO_DIR" fetch --depth 1 origin "$BRANCH"
   sudo -u $APP_USER git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
 fi
-echo "at $(git -C "$REPO_DIR" rev-parse --short HEAD)"
+echo "at $(sudo -u $APP_USER git -C "$REPO_DIR" rev-parse --short HEAD)"
 
 # Only the API and shared packages are needed on the host; skip the web app's deps.
 sudo -u $APP_USER bash -c "cd '$REPO_DIR' && npm ci --omit=dev --workspace apps/api --workspace packages/shared --include-workspace-root --no-audit --no-fund"
