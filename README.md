@@ -65,12 +65,35 @@ Open a shell on the host with `aws ssm start-session --target i-01604db9d7bfc46e
   `clips/*` prefix. Set `CDN_ORIGIN` if you front the bucket with CloudFront.
 - `npm run build` produces `apps/api/dist` (run with `npm start -w apps/api`) and `apps/web/dist` (static).
 
+## Testing
+
+`npm test` runs the whole suite: `packages/shared` typecheck, the API's unit and integration
+tests, then the web unit tests.
+
+- **API unit tests** (`npm run test:unit -w apps/api`) are pure — no database, no network. They
+  cover small logic like the daily streak's date math.
+- **API integration tests** (`npm run test:integration -w apps/api`) exercise the real Express
+  app end-to-end with [supertest](https://github.com/ladjs/supertest) against a real local
+  Postgres database, `sixmansdle_test`. They create it automatically and run migrations
+  (`apps/api/test/support/globalSetup.ts`), then truncate every table before each test
+  (`apps/api/test/support/setup.ts`). The S3-backed `services/storage.ts` module is mocked
+  (`apps/api/test/support/storageMock.ts`) so no AWS calls ever happen. Auth uses the app's own
+  `/api/auth/dev-login` route (only available outside production without Discord configured — see
+  `apps/api/test/support/client.ts`). Requires a local Postgres reachable at
+  `postgres://postgres:postgres@localhost:5432` (see `docker-compose.yml`); these tests run
+  sequentially against one shared database, so they aren't safe to parallelise across files.
+- **Web tests** (`npm test -w apps/web`) use Vitest + Testing Library + jsdom to cover the key
+  components (`ActivityCalendar`, `RankPicker`, `GameBoard`) and the daily countdown's pure date
+  math (`apps/web/src/lib/countdown.ts`).
+
 ## Scripts
 
-| Command             | What it does                              |
-| ------------------- | ----------------------------------------- |
-| `npm run dev`       | API + web with hot reload                 |
-| `npm run typecheck` | Type-check every workspace                |
-| `npm test`          | API unit tests (vitest)                   |
-| `npm run build`     | Production build of API and web           |
-| `npm run db:migrate`| Apply pending SQL migrations              |
+| Command                          | What it does                                            |
+| --------------------------------- | -------------------------------------------------------- |
+| `npm run dev`                     | API + web with hot reload                                |
+| `npm run typecheck`               | Type-check every workspace (app and test code)           |
+| `npm test`                        | Shared typecheck, API unit + integration tests, web tests |
+| `npm run test:unit -w apps/api`   | API unit tests only (no database)                        |
+| `npm run test:integration -w apps/api` | API integration tests against `sixmansdle_test`      |
+| `npm run build`                   | Production build of API and web                          |
+| `npm run db:migrate`              | Apply pending SQL migrations                              |

@@ -9,6 +9,8 @@ const boolish = z
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
+  /** Overrides the default pino level (info in prod, debug otherwise). Handy for 'silent' in tests. */
+  LOG_LEVEL: z.string().optional(),
   /** Comma-separated list of allowed browser origins. The first one is used for OAuth redirects. */
   WEB_ORIGIN: z
     .string()

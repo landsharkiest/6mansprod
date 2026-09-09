@@ -7,8 +7,10 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc --noEmit",
     "start": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test": "npm run test:unit && npm run test:integration && npm run test:db",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:db": "vitest run --config vitest.db.config.ts",
     "db:migrate": "tsx src/db/migrate.ts"
   },
