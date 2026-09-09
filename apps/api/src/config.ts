@@ -31,6 +31,8 @@ const schema = z.object({
   S3_BUCKET: z.string().min(1),
   CDN_ORIGIN: z.string().url().optional(),
   MAX_UPLOAD_MB: z.coerce.number().positive().default(50),
+  /** Git SHA of the deployed build, if set (see infra/deploy.sh). Powers GET /api/version. */
+  GIT_SHA: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);

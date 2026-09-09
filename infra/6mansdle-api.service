@@ -9,6 +9,9 @@ User=sixmansdle
 Group=sixmansdle
 WorkingDirectory=/opt/6mansdle/app/repo/apps/api
 EnvironmentFile=/opt/6mansdle/app/.env
+# Leading "-" makes this optional: deploy.sh writes GIT_SHA here on every deploy, but the unit
+# must still start fine (e.g. first-ever boot before deploy.sh has run) if the file is absent.
+EnvironmentFile=-/opt/6mansdle/app/version
 Environment=NODE_ENV=production
 ExecStart=/usr/bin/node /opt/6mansdle/app/repo/node_modules/tsx/dist/cli.mjs src/index.ts
 Restart=always

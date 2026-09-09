@@ -89,6 +89,12 @@ Open a shell on the host with `aws ssm start-session --target i-01604db9d7bfc46e
 - Give the API host an IAM role with `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` on the bucket's
   `clips/*` prefix. Set `CDN_ORIGIN` if you front the bucket with CloudFront.
 - `npm run build` produces `apps/api/dist` (run with `npm start -w apps/api`) and `apps/web/dist` (static).
+- `customHttp.yml` at the repo root sets security response headers (CSP, HSTS, etc.) for the static site.
+  Amplify Hosting picks this file up automatically from the repo root — no build-spec changes needed. See
+  the comments in that file for what each CSP directive is for and why.
+- `GET /api/version` returns `{ sha }`, the deployed git commit. `infra/deploy.sh` writes it to
+  `/opt/6mansdle/app/version` on every deploy, and the systemd unit reads it via an optional
+  (`EnvironmentFile=-`) env file, so a host that predates this change just serves `{ sha: null }`.
 
 ## Testing
 

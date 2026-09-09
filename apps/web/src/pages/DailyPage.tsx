@@ -78,7 +78,12 @@ export function DailyPage() {
     <div className="page container">
       <h1 className="page-title">Daily challenge</h1>
       <p className="page-subtitle">
-        {daily ? `${daily.date} (UTC)` : ''} · next clip in <span className="countdown">{countdown}</span>
+        {daily ? `${daily.date} (UTC)` : ''} · next clip in{' '}
+        {/* Ticks every second — a live region here would have a screen reader read the clock out
+            loud on every tick. aria-live="off" keeps it a silent visual-only update. */}
+        <span className="countdown" aria-live="off">
+          {countdown}
+        </span>
       </p>
 
       {!user && !authLoading && (

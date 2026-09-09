@@ -58,7 +58,7 @@ describe('GameBoard', () => {
     vi.mocked(api.guess).mockResolvedValueOnce(result);
 
     render(<GameBoard clip={clip} mode="endless" />);
-    await user.click(screen.getByRole('button', { name: 'S' }));
+    await user.click(screen.getByRole('button', { name: 'Guess rank S' }));
 
     expect(api.guess).toHaveBeenCalledWith({ clipId: 'clip-1', rank: 'S', mode: 'endless' });
     await waitFor(() => expect(screen.getByText('Correct!')).toBeInTheDocument());
@@ -160,8 +160,27 @@ describe('GameBoard', () => {
     vi.mocked(api.guess).mockRejectedValueOnce(new ApiRequestError(429, 'Too many guesses'));
 
     render(<GameBoard clip={clip} mode="endless" />);
-    await user.click(screen.getByRole('button', { name: 'S' }));
+    await user.click(screen.getByRole('button', { name: 'Guess rank S' }));
 
     await waitFor(() => expect(screen.getByText('Too many guesses')).toBeInTheDocument());
+  });
+
+  it('exposes every rank choice as a named, unpressed button before a guess', () => {
+    render(<GameBoard clip={clip} mode="endless" />);
+    expect(screen.getByRole('button', { name: 'Guess rank S' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getAllByRole('button', { name: /^Guess rank / })).toHaveLength(9);
+  });
+
+  it('announces the verdict once via a polite, non-interrupting live region', () => {
+    render(
+      <GameBoard
+        clip={clip}
+        mode="endless"
+        initialResult={{ correct: true, guessedRank: 'S', actualRank: 'S', distance: 0, stats: stats(), counted: true, newAchievements: [] }}
+      />,
+    );
+    const status = screen.getByRole('status');
+    expect(status).toHaveAttribute('aria-live', 'polite');
+    expect(status).toHaveTextContent('Correct!');
   });
 });

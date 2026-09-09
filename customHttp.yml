@@ -1,0 +1,53 @@
+# Security headers for the static frontend, applied by AWS Amplify Hosting automatically to
+# every build once this file exists at the repo root (no build-spec wiring needed).
+#
+# Content-Security-Policy, directive by directive:
+#   default-src 'self'          — fallback for anything not covered below: same-origin only.
+#   script-src 'self'           — only our own bundled JS. No inline <script>; index.html loads
+#                                  main.tsx as an external module, so no 'unsafe-inline' needed.
+#   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com
+#                                — Google Fonts' stylesheet, plus 'unsafe-inline' because
+#                                  framer-motion and recharts both set styles via the style
+#                                  attribute at runtime (no nonce/hash is practical for that).
+#   font-src https://fonts.gstatic.com
+#                                — the actual font files the Google Fonts stylesheet references.
+#   img-src 'self' data: https://cdn.discordapp.com https:
+#                                — our own images/og image, inline data: URIs (icons etc.),
+#                                  Discord avatars, and any S3/CloudFront-hosted image content.
+#                                  A broad https: is simpler than enumerating every clip-storage
+#                                  domain and poses little risk for <img>.
+#   media-src https:            — gameplay clips are presigned S3/CloudFront URLs on a domain
+#                                  that can change (CDN_ORIGIN is optional/environment-specific),
+#                                  so this can't be pinned to one host; https: keeps it to TLS
+#                                  origins only.
+#   connect-src 'self' https://backend.6mansdle.com
+#                                — the API. fetch() calls in apps/web/src/api/client.ts always hit
+#                                  VITE_API_ORIGIN, which is this host in production.
+#   frame-ancestors 'none'      — the site is never meant to be embedded in another page.
+#   base-uri 'self'; object-src 'none'; form-action 'self'
+#                                — standard hardening: no <base> hijacking, no plugins, forms
+#                                  can't be redirected to another origin.
+customHeaders:
+  - pattern: '**/*'
+    headers:
+      - key: 'Strict-Transport-Security'
+        value: 'max-age=15552000; includeSubDomains'
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      - key: 'Referrer-Policy'
+        value: 'strict-origin-when-cross-origin'
+      - key: 'Permissions-Policy'
+        value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+      - key: 'Content-Security-Policy'
+        value: >-
+          default-src 'self';
+          script-src 'self';
+          style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+          font-src https://fonts.gstatic.com;
+          img-src 'self' data: https://cdn.discordapp.com https:;
+          media-src https:;
+          connect-src 'self' https://backend.6mansdle.com;
+          frame-ancestors 'none';
+          base-uri 'self';
+          object-src 'none';
+          form-action 'self'

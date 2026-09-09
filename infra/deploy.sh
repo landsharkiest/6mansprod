@@ -17,7 +17,14 @@ else
   sudo -u $APP_USER git -C "$REPO_DIR" fetch --depth 1 origin "$BRANCH"
   sudo -u $APP_USER git -C "$REPO_DIR" reset --hard "origin/$BRANCH"
 fi
-echo "at $(sudo -u $APP_USER git -C "$REPO_DIR" rev-parse --short HEAD)"
+GIT_SHA=$(sudo -u $APP_USER git -C "$REPO_DIR" rev-parse HEAD)
+echo "at ${GIT_SHA:0:7}"
+
+# Read by the systemd unit (EnvironmentFile=-, so it's optional) to expose the deployed commit
+# at GET /api/version. Plain KEY=VALUE, no export/quoting — same format as the main .env.
+echo "GIT_SHA=$GIT_SHA" > "$APP_DIR/version"
+chown $APP_USER:$APP_USER "$APP_DIR/version"
+chmod 644 "$APP_DIR/version"
 
 # Only the API and shared packages are needed on the host; skip the web app's deps.
 sudo -u $APP_USER bash -c "cd '$REPO_DIR' && npm ci --omit=dev --workspace apps/api --workspace packages/shared --include-workspace-root --no-audit --no-fund"
