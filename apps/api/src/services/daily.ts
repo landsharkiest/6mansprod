@@ -24,7 +24,7 @@ export async function getOrCreateDaily(day = utcToday()): Promise<DailyRow> {
     const { rows } = await client.query<{ id: string }>(
       `SELECT c.id
          FROM clips c
-        WHERE c.status = 'approved' AND c.upload_completed
+        WHERE c.status = 'approved' AND c.upload_completed AND NOT c.hidden
         ORDER BY (
           EXISTS (SELECT 1 FROM daily_challenges d
                    WHERE d.clip_id = c.id AND d.day > CURRENT_DATE - $1::int)

@@ -2,12 +2,14 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import type { DailyResponse, GuessResponse, PlayableClip } from '@6mansdle/shared';
-import { RANKS } from '@6mansdle/shared';
+import { RANKS, REPORT_REASONS } from '@6mansdle/shared';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { parseBody, parseQuery } from '../lib/validate.js';
 import { pickRandomApprovedClip, toPlayable, clipStats, getClip } from '../services/clips.js';
 import { getOrCreateDaily, effectiveStreak } from '../services/daily.js';
 import { submitGuess } from '../services/guesses.js';
+import { submitReport } from '../services/reports.js';
+import { requireAuth } from '../auth/middleware.js';
 import { pool } from '../db/pool.js';
 import { rankDistance } from '@6mansdle/shared';
 
@@ -15,6 +17,9 @@ export const gameRouter = Router();
 
 /** Guess submissions only; reads elsewhere are unthrottled. */
 const guessLimiter = rateLimit({ windowMs: 60_000, limit: 60, standardHeaders: true, legacyHeaders: false });
+
+/** Reports are cheap to abuse (spam-hiding a clip), so throttle harder than guesses. */
+const reportLimiter = rateLimit({ windowMs: 60 * 60_000, limit: 10, standardHeaders: true, legacyHeaders: false });
 
 const uuid = z.string().uuid();
 
@@ -95,5 +100,30 @@ gameRouter.get(
     );
     if (!seen.rowCount) return res.status(403).json({ error: 'Guess first' });
     res.json(await clipStats(pool, clip));
+  }),
+);
+
+const reportSchema = z.object({
+  reason: z.enum(REPORT_REASONS),
+  suggestedRank: z.enum(RANKS).optional(),
+  note: z.string().trim().max(300).optional(),
+});
+
+/** Flag a clip as wrong/broken/inappropriate. Only open to someone who has already guessed it. */
+gameRouter.post(
+  '/clips/:id/report',
+  requireAuth,
+  reportLimiter,
+  asyncHandler(async (req, res) => {
+    const id = uuid.parse(req.params.id);
+    const { reason, suggestedRank, note } = parseBody(req, reportSchema);
+    const report = await submitReport({
+      clipId: id,
+      userId: req.user!.id,
+      reason,
+      suggestedRank: suggestedRank ?? null,
+      note: note && note.length > 0 ? note : null,
+    });
+    res.status(201).json(report);
   }),
 );

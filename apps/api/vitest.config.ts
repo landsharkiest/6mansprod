@@ -1,7 +1,9 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    // DB-backed integration tests live in vitest.db.config.ts (needs a local Postgres).
+    exclude: [...configDefaults.exclude, '**/*.db.test.ts'],
     // Unit tests never touch the network; these values only satisfy config validation.
     env: {
       NODE_ENV: 'test',
