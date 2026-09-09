@@ -1,9 +1,14 @@
 import type {
   AdminClip,
   AdminReport,
+  ChallengeGuessRequest,
+  ChallengeGuessResponse,
+  ChallengeResponse,
   ClipReport,
   ClipStatus,
   CommunityStats,
+  CreateChallengeRequest,
+  CreateChallengeResponse,
   DailyMeta,
   DailyResponse,
   GameMode,
@@ -86,6 +91,15 @@ export const api = {
   adminReports: (status: ReportStatus = 'open') => request<AdminReport[]>(`/api/admin/reports?status=${status}`),
   resolveReport: (id: number, action: ResolveReportAction, rank?: Rank) =>
     request<ResolveReportResponse>(`/api/admin/reports/${id}/resolve`, { method: 'POST', body: JSON.stringify({ action, rank }) }),
+
+  createChallenge: (body: CreateChallengeRequest) =>
+    request<CreateChallengeResponse>('/api/challenges', { method: 'POST', body: JSON.stringify(body) }),
+  challenge: (token: string) => request<ChallengeResponse>(`/api/challenges/${encodeURIComponent(token)}`),
+  challengeGuess: (token: string, body: ChallengeGuessRequest) =>
+    request<ChallengeGuessResponse>(`/api/challenges/${encodeURIComponent(token)}/guess`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 };
 
 /** Upload straight to S3 with the presigned PUT, reporting progress. */
