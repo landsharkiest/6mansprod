@@ -4,7 +4,7 @@ import { api, ApiRequestError } from '../api/client';
 import { RankPicker } from './RankPicker';
 import { DistributionChart } from './DistributionChart';
 import { fireConfetti } from '../lib/confetti';
-import { isConfirmKey, isReplayKey, isTypingTarget, rankForKey } from '../lib/shortcuts';
+import { isConfirmKey, isNativeActivationTarget, isReplayKey, isTypingTarget, rankForKey } from '../lib/shortcuts';
 
 interface Props {
   clip: PlayableClip;
@@ -74,7 +74,7 @@ export function GameBoard({ clip, mode, initialResult = null, onResult, footer, 
           }
           return;
         }
-      } else if (mode === 'endless' && onNext && isConfirmKey(e.key)) {
+      } else if (mode === 'endless' && onNext && isConfirmKey(e.key) && !isNativeActivationTarget(document.activeElement)) {
         e.preventDefault();
         onNext();
       }

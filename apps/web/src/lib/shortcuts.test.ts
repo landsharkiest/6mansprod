@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isConfirmKey, isReplayKey, isTypingTarget, rankForKey } from './shortcuts';
+import { isConfirmKey, isNativeActivationTarget, isReplayKey, isTypingTarget, rankForKey } from './shortcuts';
 
 describe('rankForKey', () => {
   it('maps 1-9 onto S X A B+ B C D E H in order', () => {
@@ -78,5 +78,19 @@ describe('isTypingTarget', () => {
     document.body.appendChild(div);
     expect(isTypingTarget(span)).toBe(true);
     div.remove();
+  });
+});
+
+describe('isNativeActivationTarget', () => {
+  it('is true for focused buttons, links and videos so Enter/Space is not double-handled', () => {
+    for (const tag of ['button', 'a', 'video']) {
+      const el = document.createElement(tag);
+      expect(isNativeActivationTarget(el)).toBe(true);
+    }
+  });
+  it('is false for body, divs and null', () => {
+    expect(isNativeActivationTarget(document.body)).toBe(false);
+    expect(isNativeActivationTarget(document.createElement('div'))).toBe(false);
+    expect(isNativeActivationTarget(null)).toBe(false);
   });
 });

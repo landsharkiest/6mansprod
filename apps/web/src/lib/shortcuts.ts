@@ -20,6 +20,17 @@ export function isConfirmKey(key: string): boolean {
 }
 
 const TEXT_INPUT_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+/** Elements that already react to Enter/Space natively (click, play/pause). */
+const NATIVE_ACTIVATION_TAGS = new Set(['BUTTON', 'A', 'VIDEO', 'SUMMARY']);
+
+/**
+ * True when Enter/Space should be left to the focused element: a focused button or link would
+ * otherwise fire its click AND our handler (advancing two clips), and a focused video uses Space
+ * to play/pause.
+ */
+export function isNativeActivationTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && NATIVE_ACTIVATION_TAGS.has(target.tagName);
+}
 
 /**
  * True when keyboard shortcuts should be ignored because focus is inside a form control
