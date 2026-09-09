@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ActivityDay } from '@6mansdle/shared';
 
 const WEEKS = 53;
@@ -11,6 +11,13 @@ function isoDay(d: Date): string {
 /** GitHub / LeetCode style year heatmap. Columns are weeks, rows Sunday..Saturday, all in UTC days. */
 export function ActivityCalendar({ activity }: { activity: ActivityDay[] }) {
   const [hover, setHover] = useState<{ day: ActivityDay | null; date: string; x: number; y: number } | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // On narrow screens the grid overflows; start at the right edge so today is visible.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [activity]);
 
   const { cells, monthLabels, totals } = useMemo(() => {
     const byDate = new Map(activity.map((a) => [a.date, a]));
@@ -52,7 +59,8 @@ export function ActivityCalendar({ activity }: { activity: ActivityDay[] }) {
     <div className="activity">
       <div className="activity-head">
         <span>
-          <b>{totals.guesses}</b> guesses on <b>{totals.activeDays}</b> days in the last year
+          <b>{totals.guesses}</b> {totals.guesses === 1 ? 'guess' : 'guesses'} on <b>{totals.activeDays}</b>{' '}
+          {totals.activeDays === 1 ? 'day' : 'days'} in the last year
         </span>
         <span className="activity-legend">
           Less
@@ -62,7 +70,7 @@ export function ActivityCalendar({ activity }: { activity: ActivityDay[] }) {
           More
         </span>
       </div>
-      <div className="activity-scroll">
+      <div className="activity-scroll" ref={scrollRef}>
         <svg width={width + 30} height={height + 20} className="activity-svg" role="img" aria-label="Activity calendar">
           {monthLabels.map((m) => (
             <text key={`${m.label}-${m.week}`} x={30 + m.week * (CELL + GAP)} y={10} className="activity-month">
