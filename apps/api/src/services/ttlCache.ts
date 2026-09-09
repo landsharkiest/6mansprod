@@ -22,4 +22,10 @@ export class TtlCache<T> {
     this.value = value;
     this.expiresAt = this.now() + this.ttlMs;
   }
+
+  /** Forgets the cached value immediately, as if it had expired. Mainly for test isolation. */
+  clear(): void {
+    this.value = undefined;
+    this.expiresAt = 0;
+  }
 }

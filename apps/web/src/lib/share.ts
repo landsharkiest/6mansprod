@@ -74,3 +74,40 @@ export function buildBlitzShareText(input: BlitzShareTextInput): string {
 
   return lines.join('\n');
 }
+
+export interface ProfileShareTextInput {
+  username: string;
+  /** Overall accuracy across all counted guesses, 0-100. */
+  accuracy: number;
+  bestStreak: number;
+  bestRun: number;
+  /** The player's strongest rank, when insights are unlocked and they have one. Omit otherwise. */
+  topStrength?: Rank;
+  badgeCount: number;
+  /** Defaults to https://6mansdle.com */
+  url?: string;
+}
+
+const DEFAULT_PROFILE_URL = 'https://6mansdle.com';
+
+/**
+ * Builds the compact share text for a player's profile card: accuracy, best streak, best run,
+ * their strongest rank (if known), and badge count. Never includes any clip-identifying detail.
+ */
+export function buildProfileShareText(input: ProfileShareTextInput): string {
+  const { username, accuracy, bestStreak, bestRun, topStrength, badgeCount, url } = input;
+
+  const lines: string[] = [
+    `${username} on 6mansdle`,
+    `${accuracy}% accuracy · 🔥 best streak ${bestStreak} · best run ${bestRun}`,
+  ];
+
+  if (topStrength) {
+    lines.push(`💪 strongest at ${topStrength}`);
+  }
+
+  lines.push(`🎖️ ${badgeCount} badge${badgeCount === 1 ? '' : 's'}`);
+  lines.push(url ?? DEFAULT_PROFILE_URL);
+
+  return lines.join('\n');
+}

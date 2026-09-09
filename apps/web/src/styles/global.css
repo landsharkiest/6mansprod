@@ -1404,6 +1404,76 @@ textarea {
   font-size: 0.85rem;
 }
 
+/* ---------- Profile insights ---------- */
+.insights-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.insights-body {
+  display: grid;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.insights-block {
+  min-width: 0;
+}
+
+.insights-subtitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+}
+
+.insights-locked {
+  text-align: center;
+  padding: 24px 12px;
+}
+
+.insights-locked p {
+  margin: 4px 0;
+}
+
+.insights-callout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.insights-callout-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.insights-callout-list li {
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.insights-bias {
+  margin: 0;
+}
+
+.insights-share {
+  display: flex;
+  justify-content: flex-start;
+}
+
+@media (max-width: 720px) {
+  .insights-callout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Achievements ---------- */
 .achievement-grid {
   display: grid;

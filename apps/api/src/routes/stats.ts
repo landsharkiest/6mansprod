@@ -1,31 +1,21 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { CommunityStats, LeaderboardEntry, LeaderboardResponse, OverallStats, Rank } from '@6mansdle/shared';
+import type { LeaderboardEntry, LeaderboardResponse, OverallStats, Rank } from '@6mansdle/shared';
 import { RANKS } from '@6mansdle/shared';
 import { pool } from '../db/pool.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { parseQuery } from '../lib/validate.js';
 import { avatarUrl } from '../auth/users.js';
-import { loadCommunityStats } from '../services/communityStats.js';
-import { TtlCache } from '../services/ttlCache.js';
+import { getCommunityStats } from '../services/communityStats.js';
 
 export const statsRouter = Router();
-
-// Community stats are aggregate-heavy (confusion matrix, per-clip rankings), so cache the
-// computed response for a minute rather than rebuilding it on every page load.
-const COMMUNITY_STATS_TTL_MS = 60_000;
-const communityStatsCache = new TtlCache<CommunityStats>(COMMUNITY_STATS_TTL_MS);
 
 statsRouter.get(
   '/community',
   asyncHandler(async (_req, res) => {
-    let body = communityStatsCache.get();
-    if (!body) {
-      body = await loadCommunityStats();
-      communityStatsCache.set(body);
-    }
-    // Same for every caller and already server-cached for a minute upstream, so a shared/browser
-    // cache holding it for 30s costs nothing extra in staleness.
+    const body = await getCommunityStats();
+    // Already server-cached for a minute upstream, so a shared/browser cache holding it for 30s
+    // costs nothing extra in staleness.
     res.set('Cache-Control', 'public, max-age=30');
     res.json(body);
   }),

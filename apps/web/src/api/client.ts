@@ -29,6 +29,7 @@ import type {
   PatchClipRequest,
   PresignUploadRequest,
   PresignUploadResponse,
+  ProfileInsights,
   Rank,
   ReportClipRequest,
   ReportStatus,
@@ -79,6 +80,7 @@ export const api = {
     request<LeaderboardResponse>(`/api/stats/leaderboard?mode=${mode}&sort=${sort}`),
   profile: () => request<UserProfile>('/api/me/profile'),
   userProfile: (id: number | string) => request<UserProfile>(`/api/users/${id}/profile`),
+  userInsights: (id: number | string) => request<ProfileInsights>(`/api/users/${id}/insights`),
 
   presignUpload: (body: PresignUploadRequest) =>
     request<PresignUploadResponse>('/api/uploads/presign', { method: 'POST', body: JSON.stringify(body) }),

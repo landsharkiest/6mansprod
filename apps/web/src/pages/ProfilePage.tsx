@@ -5,6 +5,7 @@ import { api, ApiRequestError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { ActivityCalendar } from '../components/ActivityCalendar';
 import { AchievementsSection } from '../components/AchievementsSection';
+import { InsightsSection } from '../components/InsightsSection';
 
 /** Renders /profile (own) and /u/:id (anyone's). Same data, same layout. */
 export function ProfilePage() {
@@ -55,7 +56,9 @@ export function ProfilePage() {
         <ActivityCalendar activity={activity} />
       </div>
 
-      <div className="profile-columns">
+      <InsightsSection userId={user.id} profile={profile} />
+
+      <div className="profile-columns" style={{ marginTop: 20 }}>
         <div className="card">
           <div className="card-title">Daily challenge</div>
           <div className="stat-grid">
