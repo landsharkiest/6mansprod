@@ -104,6 +104,7 @@ export function ActivityCalendar({ activity }: { activity: ActivityDay[] }) {
             return (
               <rect
                 key={c.date}
+                data-date={c.date}
                 x={30 + c.week * (CELL + GAP)}
                 y={20 + c.dow * (CELL + GAP)}
                 width={CELL}

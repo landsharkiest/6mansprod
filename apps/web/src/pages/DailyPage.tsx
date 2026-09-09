@@ -4,6 +4,7 @@ import type { DailyResponse, GuessResponse } from '@6mansdle/shared';
 import { api, ApiRequestError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { GameBoard } from '../components/GameBoard';
+import { formatCountdown, msUntilNextUtcMidnight } from '../lib/countdown';
 
 const GUEST_KEY = 'sixmansdle.dailyGuest';
 
@@ -31,13 +32,7 @@ function useCountdown() {
   const [text, setText] = useState('');
   useEffect(() => {
     const tick = () => {
-      const now = new Date();
-      const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
-      const s = Math.max(0, Math.floor((next - now.getTime()) / 1000));
-      const h = String(Math.floor(s / 3600)).padStart(2, '0');
-      const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-      const sec = String(s % 60).padStart(2, '0');
-      setText(`${h}:${m}:${sec}`);
+      setText(formatCountdown(msUntilNextUtcMidnight(new Date())));
     };
     tick();
     const id = setInterval(tick, 1000);
