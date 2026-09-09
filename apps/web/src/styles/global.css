@@ -520,6 +520,11 @@ h3 {
   box-shadow: 0 6px 20px -8px var(--rank);
 }
 
+.rank-btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.96);
+  transition: transform 0.06s;
+}
+
 .rank-btn:disabled {
   cursor: default;
   opacity: 0.55;
@@ -533,11 +538,50 @@ h3 {
 .rank-btn.is-answer {
   border-color: var(--green);
   background: rgba(40, 167, 69, 0.15);
+  animation: rank-pulse-once 0.6s ease-out;
 }
 
 .rank-btn.is-guess:not(.is-answer) {
   border-color: var(--red);
   background: rgba(218, 75, 82, 0.15);
+}
+
+@keyframes rank-pulse-once {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.6);
+  }
+  40% {
+    transform: scale(1.08);
+    box-shadow: 0 0 0 8px rgba(40, 167, 69, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-btn.is-answer {
+    animation: none;
+  }
+  .rank-btn:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+.shortcut-hint {
+  display: none;
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+@media (min-width: 768px) {
+  .shortcut-hint {
+    display: block;
+  }
 }
 
 .verdict {

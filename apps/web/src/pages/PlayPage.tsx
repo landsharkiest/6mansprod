@@ -22,6 +22,12 @@ export function PlayPage() {
     void load();
   }, [load]);
 
+  const handleNext = useCallback(() => {
+    if (!clip) return;
+    setRound((r) => r + 1);
+    void load(clip.clipId);
+  }, [clip, load]);
+
   return (
     <div className="page container">
       <h1 className="page-title">Endless</h1>
@@ -34,14 +40,9 @@ export function PlayPage() {
           key={`${clip.clipId}-${round}`}
           clip={clip}
           mode="endless"
+          onNext={handleNext}
           footer={
-            <button
-              className="btn btn-green btn-lg"
-              onClick={() => {
-                setRound((r) => r + 1);
-                void load(clip.clipId);
-              }}
-            >
+            <button className="btn btn-green btn-lg" onClick={handleNext}>
               Next clip
             </button>
           }
