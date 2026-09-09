@@ -46,3 +46,31 @@ export function buildShareText(input: ShareTextInput): string {
 
   return lines.join('\n');
 }
+
+export interface BlitzShareTextInput {
+  score: number;
+  correctCount: number;
+  totalCount: number;
+  bestStreak: number;
+  /** Defaults to https://6mansdle.com/blitz */
+  url?: string;
+}
+
+const DEFAULT_BLITZ_URL = 'https://6mansdle.com/blitz';
+
+/**
+ * Builds the compact share text for a finished Blitz run. Never includes any clip-identifying
+ * detail, same spoiler-free rule as the daily share text.
+ */
+export function buildBlitzShareText(input: BlitzShareTextInput): string {
+  const { score, correctCount, totalCount, bestStreak, url } = input;
+
+  const lines: string[] = [
+    '6mansdle Blitz ⚡',
+    `${score} pts · ${correctCount}/${totalCount} correct`,
+    `🔥 best streak ${bestStreak}`,
+    url ?? DEFAULT_BLITZ_URL,
+  ];
+
+  return lines.join('\n');
+}
