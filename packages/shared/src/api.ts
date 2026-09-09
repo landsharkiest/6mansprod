@@ -1,4 +1,5 @@
 import type { Rank } from './ranks.js';
+import type { Achievement } from './achievements.js';
 
 export type GameMode = 'endless' | 'daily';
 export type ClipStatus = 'pending' | 'approved' | 'rejected';
@@ -54,6 +55,8 @@ export interface GuessResponse {
   streak?: { current: number; best: number };
   /** Endless run (consecutive correct), present for endless guesses by logged-in users. */
   run?: { current: number; best: number };
+  /** Achievements newly earned by this guess. Empty unless the caller is signed in. */
+  newAchievements: Achievement[];
 }
 
 export interface DailyResponse {
@@ -176,6 +179,8 @@ export interface UserProfile {
   daily: { played: number; correct: number; currentStreak: number; bestStreak: number };
   endless: { played: number; correct: number; currentRun: number; bestRun: number };
   recent: HistoryEntry[];
+  /** Earned achievements only; cross-reference against the ACHIEVEMENTS catalogue for the rest. */
+  achievements: Array<{ id: string; earnedAt: string }>;
 }
 
 export interface PresignUploadRequest {

@@ -10,7 +10,7 @@ const pct = (correct: number, total: number) => (total ? Math.round((correct / t
 /** Everything a profile page shows. Safe to expose publicly: no email, no secrets. */
 export async function buildProfile(user: UserRow & { created_at?: string }): Promise<UserProfile> {
   const userId = user.id;
-  const [totals, daily, endless, recent, activity, created] = await Promise.all([
+  const [totals, daily, endless, recent, activity, created, achievements] = await Promise.all([
     pool.query<{ total: number; correct: number }>(
       `SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE is_correct)::int AS correct
          FROM guesses WHERE user_id = $1 AND counted`,
@@ -41,6 +41,10 @@ export async function buildProfile(user: UserRow & { created_at?: string }): Pro
       [userId, ACTIVITY_DAYS],
     ),
     pool.query<{ created_at: string }>('SELECT created_at FROM users WHERE id = $1', [userId]),
+    pool.query<{ achievement_id: string; earned_at: string }>(
+      'SELECT achievement_id, earned_at FROM user_achievements WHERE user_id = $1 ORDER BY earned_at ASC',
+      [userId],
+    ),
   ]);
 
   const t = totals.rows[0]!;
@@ -62,5 +66,6 @@ export async function buildProfile(user: UserRow & { created_at?: string }): Pro
     daily: { played: d.played, correct: d.correct, currentStreak: streak.current, bestStreak: streak.best },
     endless: { played: e.played, correct: e.correct, currentRun: e.current_run, bestRun: e.best_run },
     recent: recent.rows.map(({ created_at, ...r }) => ({ ...r, createdAt: new Date(created_at).toISOString() })),
+    achievements: achievements.rows.map((r) => ({ id: r.achievement_id, earnedAt: new Date(r.earned_at).toISOString() })),
   };
 }

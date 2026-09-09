@@ -55,6 +55,9 @@ gameRouter.get(
           distance: rankDistance(prior.guessed_rank, daily.clip.rank),
           stats: await clipStats(pool, daily.clip),
           counted: true,
+          // This is a replay of an already-recorded guess, not a fresh submission, so nothing
+          // new unlocks here even if the underlying guess once triggered achievements.
+          newAchievements: [],
           streak: statsRow.rows[0] ? effectiveStreak(statsRow.rows[0]) : { current: 0, best: 0 },
         };
       }

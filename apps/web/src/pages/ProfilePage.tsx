@@ -4,6 +4,7 @@ import type { UserProfile } from '@6mansdle/shared';
 import { api, ApiRequestError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { ActivityCalendar } from '../components/ActivityCalendar';
+import { AchievementsSection } from '../components/AchievementsSection';
 
 /** Renders /profile (own) and /u/:id (anyone's). Same data, same layout. */
 export function ProfilePage() {
@@ -116,6 +117,8 @@ export function ProfilePage() {
           </div>
         )}
       </div>
+
+      <AchievementsSection earned={profile.achievements} />
     </div>
   );
 }

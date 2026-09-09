@@ -2,12 +2,13 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { AdminClip, Rank } from '@6mansdle/shared';
 import { RANKS } from '@6mansdle/shared';
-import { pool } from '../db/pool.js';
+import { pool, withTransaction } from '../db/pool.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { notFound } from '../lib/errors.js';
 import { parseBody, parseQuery } from '../lib/validate.js';
 import { requireAdmin } from '../auth/middleware.js';
 import { deleteObject, playbackUrl } from '../services/storage.js';
+import { awardContributor } from '../services/achievements.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -75,16 +76,23 @@ adminRouter.post(
   asyncHandler(async (req, res) => {
     const id = z.string().uuid().parse(req.params.id);
     const { status, rank } = parseBody(req, reviewSchema);
-    const { rows } = await pool.query<AdminClipRow>(
-      `UPDATE clips
-          SET status = $2, rank = COALESCE($3, rank), reviewed_by = $4, reviewed_at = now()
-        WHERE id = $1 AND upload_completed
-        RETURNING id`,
-      [id, status, rank ?? null, req.user!.id],
-    );
-    if (!rows[0]) throw notFound('Clip not found');
-    const full = await pool.query<AdminClipRow>(`${selectClip} WHERE c.id = $1`, [id]);
-    res.json(await toAdminClip(full.rows[0]!));
+
+    const full = await withTransaction(async (client) => {
+      const { rows } = await client.query<AdminClipRow>(
+        `UPDATE clips
+            SET status = $2, rank = COALESCE($3, rank), reviewed_by = $4, reviewed_at = now()
+          WHERE id = $1 AND upload_completed
+          RETURNING id, uploader_id`,
+        [id, status, rank ?? null, req.user!.id],
+      );
+      if (!rows[0]) throw notFound('Clip not found');
+      if (status === 'approved' && rows[0].uploader_id !== null) {
+        await awardContributor(client, rows[0].uploader_id);
+      }
+      const { rows: fullRows } = await client.query<AdminClipRow>(`${selectClip} WHERE c.id = $1`, [id]);
+      return fullRows[0]!;
+    });
+    res.json(await toAdminClip(full));
   }),
 );
 

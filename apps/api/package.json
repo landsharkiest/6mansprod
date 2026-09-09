@@ -9,7 +9,8 @@
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate.ts",
+    "backfill:achievements": "tsx src/scripts/backfillAchievements.ts"
   },
   "dependencies": {
     "@6mansdle/shared": "*",
