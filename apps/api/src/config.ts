@@ -9,7 +9,11 @@ const boolish = z
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
-  WEB_ORIGIN: z.string().url(),
+  /** Comma-separated list of allowed browser origins. The first one is used for OAuth redirects. */
+  WEB_ORIGIN: z
+    .string()
+    .transform((s) => s.split(',').map((x) => x.trim()).filter(Boolean))
+    .pipe(z.array(z.string().url()).min(1)),
   API_ORIGIN: z.string().url(),
   DATABASE_URL: z.string().min(1),
   DATABASE_SSL: boolish,

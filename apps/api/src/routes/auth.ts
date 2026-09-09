@@ -15,9 +15,9 @@ authRouter.get('/discord', (req, res, next) => {
 
 authRouter.get(
   '/discord/callback',
-  passport.authenticate('discord', { failureRedirect: `${config.WEB_ORIGIN}/?login=failed` }),
+  passport.authenticate('discord', { failureRedirect: `${config.WEB_ORIGIN[0]}/?login=failed` }),
   (_req, res) => {
-    res.redirect(`${config.WEB_ORIGIN}/?login=ok`);
+    res.redirect(`${config.WEB_ORIGIN[0]}/?login=ok`);
   },
 );
 
@@ -38,7 +38,7 @@ if (!config.isProd && !config.discordEnabled) {
           await pool.query('UPDATE users SET is_admin = TRUE WHERE id = $1', [user.id]);
           user.is_admin = true;
         }
-        req.login(user, (err) => (err ? next(err) : res.redirect(`${config.WEB_ORIGIN}/?login=ok`)));
+        req.login(user, (err) => (err ? next(err) : res.redirect(`${config.WEB_ORIGIN[0]}/?login=ok`)));
       })
       .catch(next);
   });

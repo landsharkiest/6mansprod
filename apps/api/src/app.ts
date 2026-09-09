@@ -27,7 +27,7 @@ export function createApp(): express.Express {
   app.use(helmet());
   app.use(
     cors({
-      origin: config.WEB_ORIGIN,
+      origin: [...config.WEB_ORIGIN],
       credentials: true,
       methods: ['GET', 'POST', 'DELETE'],
     }),
