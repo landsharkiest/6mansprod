@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import type { DailyResponse, GuessResponse, PlayableClip } from '@6mansdle/shared';
+import type { DailyMeta, DailyResponse, GuessResponse, PlayableClip } from '@6mansdle/shared';
 import { RANKS, REPORT_REASONS } from '@6mansdle/shared';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { parseBody, parseQuery } from '../lib/validate.js';
 import { pickRandomApprovedClip, toPlayable, clipStats, getClip } from '../services/clips.js';
-import { getOrCreateDaily, effectiveStreak, getDailyNumber } from '../services/daily.js';
+import { getOrCreateDaily, effectiveStreak, getDailyNumber, getDailyMeta } from '../services/daily.js';
 import { submitGuess } from '../services/guesses.js';
 import { submitReport } from '../services/reports.js';
 import { requireAuth } from '../auth/middleware.js';
@@ -30,6 +30,15 @@ gameRouter.get(
     const { exclude } = parseQuery(req, z.object({ exclude: uuid.optional() }));
     const clip = await pickRandomApprovedClip(exclude);
     const body: PlayableClip = await toPlayable(clip);
+    res.json(body);
+  }),
+);
+
+/** Lightweight daily info (date + ordinal number) for UI chips. Never creates today's challenge. */
+gameRouter.get(
+  '/daily/meta',
+  asyncHandler(async (req, res) => {
+    const body: DailyMeta = await getDailyMeta();
     res.json(body);
   }),
 );

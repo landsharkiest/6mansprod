@@ -82,6 +82,16 @@ export async function getDailyNumber(day: string): Promise<number> {
   return rows[0]?.number ?? 1;
 }
 
+/**
+ * Lightweight daily info for a UI chip: the date and its ordinal number, without the side effect
+ * of creating today's challenge (unlike {@link getOrCreateDaily}). Numbering counts calendar days
+ * since the first daily, so it matches the number shown in share text even when today's row
+ * doesn't exist yet or earlier days were skipped.
+ */
+export async function getDailyMeta(day = utcToday()): Promise<{ date: string; number: number }> {
+  return { date: day, number: await getDailyNumber(day) };
+}
+
 export interface StreakState {
   current: number;
   best: number;

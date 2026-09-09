@@ -24,3 +24,4 @@ describe('effectiveStreak', () => {
     expect(effectiveStreak({ current_streak: 0, best_streak: 0, last_played: null }, today)).toEqual({ current: 0, best: 0 });
   });
 });
+

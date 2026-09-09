@@ -1,9 +1,26 @@
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../api/client';
+import { HowToPlayModal, hasSeenHowToPlay, markHowToPlaySeen } from './HowToPlayModal';
+import { Footer } from './Footer';
+
+/** Routes where a first-time visitor should see the how-to-play modal automatically. */
+const AUTO_HELP_ROUTES = new Set(['/daily', '/play']);
 
 export function Layout() {
   const { user, loading, logout } = useAuth();
+  const location = useLocation();
+  const [howToPlayOpen, setHowToPlayOpen] = useState(false);
+
+  useEffect(() => {
+    if (AUTO_HELP_ROUTES.has(location.pathname) && !hasSeenHowToPlay()) {
+      markHowToPlaySeen();
+      setHowToPlayOpen(true);
+    }
+    // Only re-check when the route changes, not on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   return (
     <>
@@ -41,26 +58,39 @@ export function Layout() {
             )}
           </nav>
 
-          {loading ? null : user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Link to="/profile" className="user-chip" title="Your profile">
-                {user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <span className="avatar" />}
-                <span>{user.username}</span>
-              </Link>
-              <button className="btn btn-ghost" onClick={() => void logout()} title="Log out">
-                Log out
-              </button>
-            </div>
-          ) : (
-            <a className="btn btn-blurple" href={api.loginUrl}>
-              <DiscordIcon /> Sign in
-            </a>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              className="btn btn-ghost help-btn"
+              onClick={() => setHowToPlayOpen(true)}
+              aria-label="How to play"
+              title="How to play"
+            >
+              ?
+            </button>
+            {loading ? null : user ? (
+              <>
+                <Link to="/profile" className="user-chip" title="Your profile">
+                  {user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <span className="avatar" />}
+                  <span>{user.username}</span>
+                </Link>
+                <button className="btn btn-ghost" onClick={() => void logout()} title="Log out">
+                  Log out
+                </button>
+              </>
+            ) : (
+              <a className="btn btn-blurple" href={api.loginUrl}>
+                <DiscordIcon /> Sign in
+              </a>
+            )}
+          </div>
         </div>
       </header>
       <main>
         <Outlet />
       </main>
+      <Footer />
+      <HowToPlayModal open={howToPlayOpen} onClose={() => setHowToPlayOpen(false)} />
     </>
   );
 }

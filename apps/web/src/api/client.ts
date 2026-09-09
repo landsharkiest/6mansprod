@@ -4,6 +4,7 @@ import type {
   ClipReport,
   ClipStatus,
   CommunityStats,
+  DailyMeta,
   DailyResponse,
   GameMode,
   GuessRequest,
@@ -56,6 +57,7 @@ export const api = {
   randomClip: (exclude?: string) =>
     request<PlayableClip>(`/api/clips/random${exclude ? `?exclude=${encodeURIComponent(exclude)}` : ''}`),
   daily: () => request<DailyResponse>('/api/daily'),
+  dailyMeta: () => request<DailyMeta>('/api/daily/meta'),
   guess: (body: GuessRequest) => request<GuessResponse>('/api/guesses', { method: 'POST', body: JSON.stringify(body) }),
 
   overallStats: () => request<OverallStats>('/api/stats/overall'),
