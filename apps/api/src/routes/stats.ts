@@ -1,13 +1,32 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { LeaderboardEntry, LeaderboardResponse, OverallStats, Rank } from '@6mansdle/shared';
+import type { CommunityStats, LeaderboardEntry, LeaderboardResponse, OverallStats, Rank } from '@6mansdle/shared';
 import { RANKS } from '@6mansdle/shared';
 import { pool } from '../db/pool.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { parseQuery } from '../lib/validate.js';
 import { avatarUrl } from '../auth/users.js';
+import { loadCommunityStats } from '../services/communityStats.js';
+import { TtlCache } from '../services/ttlCache.js';
 
 export const statsRouter = Router();
+
+// Community stats are aggregate-heavy (confusion matrix, per-clip rankings), so cache the
+// computed response for a minute rather than rebuilding it on every page load.
+const COMMUNITY_STATS_TTL_MS = 60_000;
+const communityStatsCache = new TtlCache<CommunityStats>(COMMUNITY_STATS_TTL_MS);
+
+statsRouter.get(
+  '/community',
+  asyncHandler(async (_req, res) => {
+    let body = communityStatsCache.get();
+    if (!body) {
+      body = await loadCommunityStats();
+      communityStatsCache.set(body);
+    }
+    res.json(body);
+  }),
+);
 
 statsRouter.get(
   '/overall',

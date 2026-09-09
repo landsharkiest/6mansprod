@@ -1,6 +1,7 @@
 import type {
   AdminClip,
   ClipStatus,
+  CommunityStats,
   DailyResponse,
   GameMode,
   GuessRequest,
@@ -52,6 +53,7 @@ export const api = {
   guess: (body: GuessRequest) => request<GuessResponse>('/api/guesses', { method: 'POST', body: JSON.stringify(body) }),
 
   overallStats: () => request<OverallStats>('/api/stats/overall'),
+  communityStats: () => request<CommunityStats>('/api/stats/community'),
   leaderboard: (mode: GameMode = 'daily', sort: LeaderboardSort = 'streak') =>
     request<LeaderboardResponse>(`/api/stats/leaderboard?mode=${mode}&sort=${sort}`),
   profile: () => request<UserProfile>('/api/me/profile'),

@@ -26,6 +26,9 @@ export function Layout() {
             <NavLink to="/leaderboard" className="nav-link">
               Leaderboard
             </NavLink>
+            <NavLink to="/stats" className="nav-link">
+              Stats
+            </NavLink>
             {user && (
               <NavLink to="/upload" className="nav-link">
                 Upload

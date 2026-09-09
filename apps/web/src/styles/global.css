@@ -931,3 +931,116 @@ input[type='text'] {
 .activity-tip b {
   color: var(--text);
 }
+
+/* ---------- Stats page ---------- */
+.bias-callouts {
+  display: grid;
+  gap: 8px;
+}
+
+.bias-callouts p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.bias-callouts b {
+  font-weight: 800;
+}
+
+.confusion-wrap {
+  overflow-x: auto;
+}
+
+.confusion-grid {
+  display: grid;
+  grid-template-columns: 84px repeat(9, minmax(40px, 1fr));
+  gap: 3px;
+  min-width: 520px;
+}
+
+.confusion-row {
+  display: contents;
+}
+
+.confusion-corner {
+  display: flex;
+  align-items: flex-end;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  padding-bottom: 4px;
+}
+
+.confusion-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 6px 0;
+}
+
+.confusion-rowhead {
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+
+.confusion-cell {
+  aspect-ratio: 1;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: default;
+  transition: outline-color 0.1s ease;
+  outline: 1px solid transparent;
+}
+
+.confusion-cell.is-diagonal {
+  outline: 1px solid var(--border-strong);
+}
+
+.confusion-cell.is-hovered {
+  outline: 2px solid #fff;
+}
+
+.confusion-tooltip {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+}
+
+.clip-difficulty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.clip-difficulty-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.clip-difficulty-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.clip-difficulty-accuracy {
+  font-weight: 800;
+}
+
+.clip-difficulty-guesses {
+  margin-left: auto;
+  font-size: 0.85rem;
+}
