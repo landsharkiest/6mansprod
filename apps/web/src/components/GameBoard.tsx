@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { GameMode, GuessResponse, PlayableClip, Rank } from '@6mansdle/shared';
 import { api, ApiRequestError } from '../api/client';
+import { useAuth } from '../auth/AuthContext';
 import { RankPicker } from './RankPicker';
 import { DistributionChart } from './DistributionChart';
 import { fireConfetti } from '../lib/confetti';
 import { isConfirmKey, isNativeActivationTarget, isReplayKey, isTypingTarget, rankForKey } from '../lib/shortcuts';
+import { ReportClipForm } from './ReportClipForm';
 
 interface Props {
   clip: PlayableClip;
@@ -25,6 +27,7 @@ const VERDICTS: Record<number, string> = {
 };
 
 export function GameBoard({ clip, mode, initialResult = null, onResult, footer, onNext }: Props) {
+  const { user } = useAuth();
   const [result, setResult] = useState<GuessResponse | null>(initialResult);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +161,12 @@ export function GameBoard({ clip, mode, initialResult = null, onResult, footer, 
               {result.stats.totalGuesses} guesses, {result.stats.accuracy}% correct
             </p>
           </div>
+
+          {user && (
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <ReportClipForm clipId={clip.clipId} />
+            </div>
+          )}
 
           {footer && <div style={{ marginTop: 20, textAlign: 'center' }}>{footer}</div>}
         </div>

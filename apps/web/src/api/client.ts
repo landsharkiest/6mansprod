@@ -1,5 +1,7 @@
 import type {
   AdminClip,
+  AdminReport,
+  ClipReport,
   ClipStatus,
   CommunityStats,
   DailyResponse,
@@ -14,6 +16,10 @@ import type {
   PresignUploadRequest,
   PresignUploadResponse,
   Rank,
+  ReportClipRequest,
+  ReportStatus,
+  ResolveReportAction,
+  ResolveReportResponse,
   UserProfile,
 } from '@6mansdle/shared';
 
@@ -71,6 +77,13 @@ export const api = {
   reviewClip: (id: string, status: 'approved' | 'rejected', rank?: Rank) =>
     request<AdminClip>(`/api/admin/clips/${id}/review`, { method: 'POST', body: JSON.stringify({ status, rank }) }),
   deleteClip: (id: string) => request<void>(`/api/admin/clips/${id}`, { method: 'DELETE' }),
+
+  reportClip: (clipId: string, body: ReportClipRequest) =>
+    request<ClipReport>(`/api/clips/${clipId}/report`, { method: 'POST', body: JSON.stringify(body) }),
+
+  adminReports: (status: ReportStatus = 'open') => request<AdminReport[]>(`/api/admin/reports?status=${status}`),
+  resolveReport: (id: number, action: ResolveReportAction, rank?: Rank) =>
+    request<ResolveReportResponse>(`/api/admin/reports/${id}/resolve`, { method: 'POST', body: JSON.stringify({ action, rank }) }),
 };
 
 /** Upload straight to S3 with the presigned PUT, reporting progress. */

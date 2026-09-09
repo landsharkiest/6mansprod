@@ -1,4 +1,4 @@
-import type { ClipStats, PlayableClip, Rank, RankCount } from '@6mansdle/shared';
+import type { AdminClip, ClipStats, PlayableClip, Rank, RankCount } from '@6mansdle/shared';
 import { RANKS } from '@6mansdle/shared';
 import { pool, type Queryable } from '../db/pool.js';
 import { notFound } from '../lib/errors.js';
@@ -24,12 +24,15 @@ export async function toPlayable(clip: ClipRow): Promise<PlayableClip> {
   return { clipId: clip.id, videoUrl: await playbackUrl(clip.s3_key), contentType: clip.content_type };
 }
 
-/** A random approved clip, avoiding the one the player just saw when there is any alternative. */
+/**
+ * A random approved clip, avoiding the one the player just saw when there is any alternative.
+ * Clips pulled by the auto-hide safeguard are excluded from rotation.
+ */
 export async function pickRandomApprovedClip(excludeId?: string): Promise<ClipRow> {
   const { rows } = await pool.query<ClipRow>(
     `SELECT id, s3_key, rank, status, content_type
        FROM clips
-      WHERE status = 'approved' AND upload_completed
+      WHERE status = 'approved' AND upload_completed AND NOT hidden
       ORDER BY (id = $1) ASC, random()
       LIMIT 1`,
     [excludeId ?? null],
@@ -37,6 +40,43 @@ export async function pickRandomApprovedClip(excludeId?: string): Promise<ClipRo
   const clip = rows[0];
   if (!clip) throw notFound('No approved clips available yet');
   return clip;
+}
+
+/** Row shape for the admin clip list and for a clip joined onto an admin report. */
+export interface AdminClipRow {
+  id: string;
+  s3_key: string;
+  rank: Rank;
+  status: AdminClip['status'];
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  created_at: string;
+  reviewed_at: string | null;
+  uploader_id: number | null;
+  uploader_name: string | null;
+  hidden: boolean;
+}
+
+export const ADMIN_CLIP_SELECT = `
+  SELECT c.id, c.s3_key, c.rank, c.status, c.original_filename, c.content_type, c.size_bytes,
+         c.created_at, c.reviewed_at, c.uploader_id, u.username AS uploader_name, c.hidden
+    FROM clips c LEFT JOIN users u ON u.id = c.uploader_id`;
+
+export async function toAdminClip(r: AdminClipRow): Promise<AdminClip> {
+  return {
+    id: r.id,
+    rank: r.rank,
+    status: r.status,
+    originalFilename: r.original_filename,
+    contentType: r.content_type,
+    sizeBytes: r.size_bytes,
+    createdAt: new Date(r.created_at).toISOString(),
+    reviewedAt: r.reviewed_at ? new Date(r.reviewed_at).toISOString() : null,
+    uploader: r.uploader_id !== null ? { id: r.uploader_id, username: r.uploader_name ?? 'unknown' } : null,
+    videoUrl: await playbackUrl(r.s3_key),
+    hidden: r.hidden,
+  };
 }
 
 export async function clipStats(db: Queryable, clip: Pick<ClipRow, 'id' | 'rank'>): Promise<ClipStats> {

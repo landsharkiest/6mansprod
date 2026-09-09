@@ -741,13 +741,56 @@ tr:last-child td {
 }
 
 select,
-input[type='text'] {
+input[type='text'],
+textarea {
   font: inherit;
   color: var(--text);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* ---------- Clip reports ---------- */
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: var(--text);
+}
+
+.report-status {
+  font-size: 0.85rem;
+}
+
+.report-form {
+  margin-top: 16px;
+  text-align: left;
+}
+
+.hidden-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(218, 75, 82, 0.15);
+  border: 1px solid rgba(218, 75, 82, 0.5);
+  color: #f2a0a4;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .progress {

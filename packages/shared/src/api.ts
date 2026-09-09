@@ -203,9 +203,69 @@ export interface AdminClip {
   uploader: Pick<PublicUser, 'id' | 'username'> | null;
   reviewedAt: string | null;
   videoUrl: string;
+  /** Pulled from rotation by the auto-hide safeguard (>= 3 open reports from distinct users). */
+  hidden: boolean;
 }
 
 export interface ApiError {
   error: string;
   details?: unknown;
+}
+
+export const REPORT_REASONS = ['wrong_rank', 'rank_visible', 'bad_quality', 'not_6mans', 'other'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  wrong_rank: 'Wrong rank',
+  rank_visible: 'Rank is visible in the clip',
+  bad_quality: 'Bad video quality',
+  not_6mans: 'Not a 6mans clip',
+  other: 'Other',
+};
+
+export type ReportStatus = 'open' | 'resolved' | 'dismissed';
+
+export interface ReportClipRequest {
+  reason: ReportReason;
+  /** Only meaningful when reason is 'wrong_rank', but accepted regardless. */
+  suggestedRank?: Rank;
+  /** Max 300 chars. */
+  note?: string;
+}
+
+/** What the reporter gets back after filing a report. */
+export interface ClipReport {
+  id: number;
+  clipId: string;
+  reason: ReportReason;
+  suggestedRank: Rank | null;
+  note: string | null;
+  status: ReportStatus;
+  createdAt: string;
+}
+
+/** A report as seen in the admin queue, joined with the clip it targets. */
+export interface AdminReport {
+  id: number;
+  clip: AdminClip;
+  reason: ReportReason;
+  suggestedRank: Rank | null;
+  note: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  reporter: Pick<PublicUser, 'id' | 'username'> | null;
+}
+
+export type ResolveReportAction = 'fix_rank' | 'reject_clip' | 'dismiss';
+
+export interface ResolveReportRequest {
+  action: ResolveReportAction;
+  /** Required when action is 'fix_rank'. */
+  rank?: Rank;
+}
+
+export interface ResolveReportResponse {
+  clipId: string;
+  /** How many open reports on that clip (including this one) were closed. */
+  resolvedCount: number;
 }

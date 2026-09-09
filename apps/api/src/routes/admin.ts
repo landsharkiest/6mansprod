@@ -1,50 +1,18 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { AdminClip, Rank } from '@6mansdle/shared';
 import { RANKS } from '@6mansdle/shared';
 import { pool } from '../db/pool.js';
 import { asyncHandler } from '../lib/asyncHandler.js';
 import { notFound } from '../lib/errors.js';
 import { parseBody, parseQuery } from '../lib/validate.js';
 import { requireAdmin } from '../auth/middleware.js';
-import { deleteObject, playbackUrl } from '../services/storage.js';
+import { deleteObject } from '../services/storage.js';
+import { ADMIN_CLIP_SELECT as selectClip, toAdminClip, type AdminClipRow } from '../services/clips.js';
+import { reportsRouter } from './reports.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
-
-interface AdminClipRow {
-  id: string;
-  s3_key: string;
-  rank: Rank;
-  status: AdminClip['status'];
-  original_filename: string;
-  content_type: string;
-  size_bytes: number;
-  created_at: string;
-  reviewed_at: string | null;
-  uploader_id: number | null;
-  uploader_name: string | null;
-}
-
-async function toAdminClip(r: AdminClipRow): Promise<AdminClip> {
-  return {
-    id: r.id,
-    rank: r.rank,
-    status: r.status,
-    originalFilename: r.original_filename,
-    contentType: r.content_type,
-    sizeBytes: r.size_bytes,
-    createdAt: new Date(r.created_at).toISOString(),
-    reviewedAt: r.reviewed_at ? new Date(r.reviewed_at).toISOString() : null,
-    uploader: r.uploader_id !== null ? { id: r.uploader_id, username: r.uploader_name ?? 'unknown' } : null,
-    videoUrl: await playbackUrl(r.s3_key),
-  };
-}
-
-const selectClip = `
-  SELECT c.id, c.s3_key, c.rank, c.status, c.original_filename, c.content_type, c.size_bytes,
-         c.created_at, c.reviewed_at, c.uploader_id, u.username AS uploader_name
-    FROM clips c LEFT JOIN users u ON u.id = c.uploader_id`;
+adminRouter.use(reportsRouter);
 
 adminRouter.get(
   '/clips',
