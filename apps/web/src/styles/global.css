@@ -842,10 +842,26 @@ input[type='text'] {
 
 .activity-scroll {
   overflow-x: auto;
+  padding-bottom: 6px;
+  /* Keep the scrollbar discoverable on Windows/macOS overlay-scrollbar setups. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
+.activity-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.activity-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+/* Scales up to fill wide cards (no scrolling needed); keeps its natural width and scrolls on narrow ones. */
 .activity-svg {
   display: block;
+  width: 100%;
+  height: auto;
 }
 
 .activity-month {

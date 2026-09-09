@@ -16,7 +16,14 @@ export function ActivityCalendar({ activity }: { activity: ActivityDay[] }) {
   // On narrow screens the grid overflows; start at the right edge so today is visible.
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollLeft = el.scrollWidth;
+    if (!el) return;
+    const toEnd = () => {
+      el.scrollLeft = el.scrollWidth;
+    };
+    toEnd();
+    // Fonts and layout can shift after first paint; settle once more on the next frame.
+    const raf = requestAnimationFrame(toEnd);
+    return () => cancelAnimationFrame(raf);
   }, [activity]);
 
   const { cells, monthLabels, totals } = useMemo(() => {
@@ -71,7 +78,13 @@ export function ActivityCalendar({ activity }: { activity: ActivityDay[] }) {
         </span>
       </div>
       <div className="activity-scroll" ref={scrollRef}>
-        <svg width={width + 30} height={height + 20} className="activity-svg" role="img" aria-label="Activity calendar">
+        <svg
+          viewBox={`0 0 ${width + 30} ${height + 20}`}
+          style={{ minWidth: width + 30 }}
+          className="activity-svg"
+          role="img"
+          aria-label="Activity calendar"
+        >
           {monthLabels.map((m) => (
             <text key={`${m.label}-${m.week}`} x={30 + m.week * (CELL + GAP)} y={10} className="activity-month">
               {m.label}
