@@ -73,7 +73,7 @@ export function createApp(): express.Express {
       credentials: true,
       // OPTIONS is handled by the cors middleware itself (it short-circuits preflight requests
       // before they reach any route), so it doesn't need to be listed here.
-      methods: ['GET', 'POST', 'DELETE'],
+      methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     }),
   );
   app.use(express.json({ limit: '32kb' }));
