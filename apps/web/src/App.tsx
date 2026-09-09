@@ -4,6 +4,7 @@ import { useAuth } from './auth/AuthContext';
 import { HomePage } from './pages/HomePage';
 import { PlayPage } from './pages/PlayPage';
 import { DailyPage } from './pages/DailyPage';
+import { ChallengePage } from './pages/ChallengePage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { StatsPage } from './pages/StatsPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/play" element={<PlayPage />} />
         <Route path="/daily" element={<DailyPage />} />
+        <Route path="/c/:token" element={<ChallengePage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/u/:id" element={<ProfilePage />} />

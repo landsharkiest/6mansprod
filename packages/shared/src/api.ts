@@ -281,3 +281,70 @@ export interface ResolveReportResponse {
   /** How many open reports on that clip (including this one) were closed. */
   resolvedCount: number;
 }
+
+export interface CreateChallengeRequest {
+  clipId: string;
+}
+
+export interface CreateChallengeResponse {
+  token: string;
+  /** Full shareable URL, e.g. https://6mansdle.com/c/AbCd12eFgH34. */
+  url: string;
+}
+
+/** What the caller already knows about their own attempt, before the reveal. */
+export interface ChallengeAttempt {
+  guessedRank: Rank;
+  isCorrect: boolean;
+}
+
+/**
+ * Only present once the caller has attempted the challenge (or is re-fetching after they have).
+ * Never sent before that — the whole point of a challenge is guessing blind first.
+ */
+export interface ChallengeReveal {
+  actualRank: Rank;
+  creatorGuess: Rank;
+  creatorCorrect: boolean;
+  /** How everyone who has taken this challenge guessed. */
+  distribution: RankCount[];
+}
+
+export interface ChallengeResponse {
+  /** Never carries the rank — same contract as a normal playable clip. */
+  clip: PlayableClip;
+  creator: Pick<PublicUser, 'username' | 'avatarUrl'>;
+  /** Total people who have guessed on this challenge so far. */
+  attempts: number;
+  expired: boolean;
+  myAttempt: ChallengeAttempt | null;
+  reveal: ChallengeReveal | null;
+}
+
+export interface ChallengeGuessRequest {
+  rank: Rank;
+}
+
+export interface ChallengeGuessResponse {
+  correct: boolean;
+  actualRank: Rank;
+  distance: number;
+  creatorGuess: Rank;
+  creatorCorrect: boolean;
+  youBeatCreator: boolean;
+  /** How everyone who has taken this challenge guessed, including this attempt. */
+  distribution: RankCount[];
+  /** Same global clip stats a normal endless guess returns. */
+  stats: ClipStats;
+}
+
+export type ChallengeVerdict = 'beat' | 'tie' | 'lost';
+
+/**
+ * Compares the challenge-taker's correctness against the creator's original guess. Pure and
+ * shared so the API (for `youBeatCreator`) and the web result panel (for its verdict text) agree.
+ */
+export function challengeVerdict(myCorrect: boolean, creatorCorrect: boolean): ChallengeVerdict {
+  if (myCorrect === creatorCorrect) return 'tie';
+  return myCorrect ? 'beat' : 'lost';
+}
