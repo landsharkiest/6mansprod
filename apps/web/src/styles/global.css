@@ -97,9 +97,19 @@ h3 {
   z-index: 100;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* The blur lives on a pseudo-element rather than directly on .nav: a `backdrop-filter` on .nav
+   itself would make it the CSS containing block for any `position: fixed` descendant (like the
+   mobile bottom nav below), pinning that descendant to .nav's own box instead of the viewport. */
+.nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: linear-gradient(to bottom, rgba(15, 15, 15, 0.95), rgba(15, 15, 15, 0.75));
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .nav-inner {
@@ -355,12 +365,13 @@ h3 {
 }
 
 .hero-title {
-  font-size: clamp(3.2rem, 12vw, 7rem);
+  font-size: clamp(2.6rem, 12vw, 7rem);
   font-weight: 900;
   letter-spacing: -0.03em;
   line-height: 1;
   position: relative;
   display: inline-block;
+  white-space: nowrap;
 }
 
 .hero-title em {
@@ -470,6 +481,7 @@ h3 {
 }
 
 .video-frame {
+  position: relative;
   background: #000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -484,10 +496,146 @@ h3 {
   display: block;
 }
 
+/* ---------- Clip player ---------- */
+.clip-status-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--text-muted);
+  text-align: center;
+  padding: 16px;
+  pointer-events: none;
+}
+
+.clip-status-overlay .btn {
+  pointer-events: auto;
+}
+
+.clip-replay-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: pointer;
+}
+
+.clip-replay-overlay svg {
+  width: 56px;
+  height: 56px;
+  padding: 14px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+@media (max-width: 720px) {
+  .clip-replay-overlay {
+    display: flex;
+  }
+}
+
+.clip-unmute-chip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: rgba(15, 15, 15, 0.85);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.clip-unmute-chip:hover {
+  background: rgba(15, 15, 15, 0.95);
+}
+
+.clip-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 2;
+}
+
+.clip-toggle {
+  padding: 6px 12px;
+  min-height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.clip-toggle.is-on {
+  color: var(--text);
+  border-color: var(--green);
+  background: rgba(40, 167, 69, 0.25);
+}
+
+.clip-watched {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  color: #d4d4d4;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+}
+
+@media (max-width: 720px) {
+  .clip-toolbar {
+    left: 6px;
+    top: 6px;
+    right: 6px;
+  }
+  .clip-toggle {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+}
+
 .rank-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
   gap: 10px;
+}
+
+@media (max-width: 720px) {
+  /* 9 ranks in a comfortable 3x3 grid on phones instead of an odd auto-fit wrap. */
+  .rank-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .rank-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 .rank-btn {
