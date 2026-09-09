@@ -79,8 +79,8 @@ export function ActivityCalendar({ activity }: { activity: ActivityDay[] }) {
       </div>
       <div className="activity-scroll" ref={scrollRef}>
         <svg
-          viewBox={`0 0 ${width + 30} ${height + 20}`}
-          style={{ minWidth: width + 30 }}
+          viewBox={`0 0 ${width + 30 + 14} ${height + 20}`}
+          style={{ minWidth: width + 30 + 14 }}
           className="activity-svg"
           role="img"
           aria-label="Activity calendar"
