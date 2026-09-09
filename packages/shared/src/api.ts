@@ -71,6 +71,60 @@ export interface OverallStats {
   perRank: Array<{ rank: Rank; totalGuesses: number; correctGuesses: number }>;
 }
 
+/** Community-wide totals for the public stats page. Built from counted guesses only. */
+export interface CommunityStatsTotals {
+  totalGuesses: number;
+  correctGuesses: number;
+  accuracy: number;
+  /** Distinct signed-in users who have made at least one counted guess. */
+  players: number;
+  approvedClips: number;
+  guessesToday: number;
+  guessesThisWeek: number;
+}
+
+export interface RankAccuracy {
+  rank: Rank;
+  totalGuesses: number;
+  correctGuesses: number;
+  accuracy: number;
+}
+
+/** One cell of the actual-rank x guessed-rank confusion matrix. */
+export interface ConfusionCell {
+  actualRank: Rank;
+  guessedRank: Rank;
+  count: number;
+}
+
+/** A clip's difficulty summary. Ranks are already revealed after play, so this is safe to expose. */
+export interface ClipDifficulty {
+  clipId: string;
+  actualRank: Rank;
+  totalGuesses: number;
+  accuracy: number;
+}
+
+/**
+ * Average signed rank-distance of guesses for one actual rank (RANKS order: index 0 = best).
+ * Positive means players tend to guess a *better* rank than the truth (overrated);
+ * negative means they tend to guess *worse* (underrated).
+ */
+export interface RankBias {
+  rank: Rank;
+  avgSignedDistance: number;
+}
+
+export interface CommunityStats {
+  totals: CommunityStatsTotals;
+  perRank: RankAccuracy[];
+  confusionMatrix: ConfusionCell[];
+  hardestClips: ClipDifficulty[];
+  easiestClips: ClipDifficulty[];
+  mostOverratedRank: RankBias | null;
+  mostUnderratedRank: RankBias | null;
+}
+
 export type LeaderboardSort = 'streak' | 'best' | 'accuracy' | 'played';
 
 export interface LeaderboardEntry {
