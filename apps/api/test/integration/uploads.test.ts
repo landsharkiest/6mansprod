@@ -120,6 +120,21 @@ describe('admin review', () => {
     expect(list.body.map((c: { id: string }) => c.id)).toContain(clip.id);
   });
 
+  it('includes each clip\'s uploader approved/rejected counts, for spotting spam', async () => {
+    const app = buildApp();
+    const uploaderRes = await loginAs(app, 'player');
+    const { agent: adminAgent } = await loginAs(app, 'admin');
+
+    await createClip({ status: 'approved', uploaderId: uploaderRes.userId });
+    await createClip({ status: 'rejected', uploaderId: uploaderRes.userId });
+    const pending = await createClip({ status: 'pending', uploaderId: uploaderRes.userId });
+
+    const list = await adminAgent.get(`/api/admin/clips?status=pending`);
+    expect(list.status).toBe(200);
+    const row = list.body.find((c: { id: string }) => c.id === pending.id);
+    expect(row.uploaderStats).toEqual({ approved: 1, rejected: 1 });
+  });
+
   it('deletes a rejected clip', async () => {
     const app = buildApp();
     const clip = await createClip({ status: 'rejected' });

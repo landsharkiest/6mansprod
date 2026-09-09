@@ -217,11 +217,71 @@ export interface AdminClip {
   videoUrl: string;
   /** Pulled from rotation by the auto-hide safeguard (>= 3 open reports from distinct users). */
   hidden: boolean;
+  /** The uploader's approved/rejected clip counts, for spotting spam in the review queue. Only
+   * populated on the admin clip list (and only when the clip has an uploader). */
+  uploaderStats?: { approved: number; rejected: number };
 }
 
 export interface ApiError {
   error: string;
   details?: unknown;
+}
+
+/** Lets an admin fix a clip's rank (and, separately, its hidden flag) without a full review. */
+export interface PatchClipRequest {
+  rank?: Rank;
+  hidden?: boolean;
+}
+
+export interface DashboardCounts {
+  pendingClips: number;
+  approvedClips: number;
+  rejectedClips: number;
+  hiddenClips: number;
+  openReports: number;
+  usersTotal: number;
+  usersActive7d: number;
+  guessesToday: number;
+  guesses7d: number;
+  guesses30d: number;
+}
+
+/** One UTC calendar day of activity for the dashboard's trend charts. */
+export interface DashboardSeriesPoint {
+  date: string;
+  guesses: number;
+  newUsers: number;
+}
+
+export interface DashboardUploader {
+  id: number;
+  username: string;
+  approvedCount: number;
+}
+
+/** An approved clip whose accuracy suggests it's mislabeled -- worth a second look. */
+export interface DashboardAttentionClip {
+  id: string;
+  rank: Rank;
+  accuracy: number;
+  guesses: number;
+  videoUrl: string;
+}
+
+export interface DashboardNeverPlayedClip {
+  id: string;
+  rank: Rank;
+  createdAt: string;
+  videoUrl: string;
+}
+
+export interface AdminDashboard {
+  counts: DashboardCounts;
+  /** Last 30 UTC days, oldest first, zero-filled for days with no activity. */
+  series: DashboardSeriesPoint[];
+  topUploaders: DashboardUploader[];
+  attentionClips: DashboardAttentionClip[];
+  neverPlayedClips: DashboardNeverPlayedClip[];
 }
 
 export const REPORT_REASONS = ['wrong_rank', 'rank_visible', 'bad_quality', 'not_6mans', 'other'] as const;
