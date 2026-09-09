@@ -6,8 +6,7 @@ export function Footer() {
         <span aria-hidden="true">&middot;</span>
         <span>Clips belong to their uploaders</span>
         <span aria-hidden="true">&middot;</span>
-        {/* TODO: point at the real repo once it's public. */}
-        <a href="https://github.com/6mansdle/6mansdle" target="_blank" rel="noreferrer">
+        <a href="https://github.com/landsharkiest/6mansprod" target="_blank" rel="noreferrer">
           GitHub
         </a>
       </div>

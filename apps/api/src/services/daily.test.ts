@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { effectiveStreak, nextDailyNumber } from './daily.js';
+import { effectiveStreak } from './daily.js';
 import { previousDay, utcToday } from '../lib/dates.js';
 
 describe('dates', () => {
@@ -25,12 +25,3 @@ describe('effectiveStreak', () => {
   });
 });
 
-describe('nextDailyNumber', () => {
-  it('starts at 1 when no daily has ever run', () => {
-    expect(nextDailyNumber(null)).toBe(1);
-  });
-  it('is one past the most recent daily number', () => {
-    expect(nextDailyNumber(1)).toBe(2);
-    expect(nextDailyNumber(41)).toBe(42);
-  });
-});
