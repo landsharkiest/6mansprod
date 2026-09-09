@@ -74,7 +74,11 @@ export function Layout() {
             {loading ? null : user ? (
               <>
                 <Link to="/profile" className="user-chip" title="Your profile">
-                  {user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : <span className="avatar" />}
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" width={28} height={28} />
+                  ) : (
+                    <span className="avatar" />
+                  )}
                   <span>{user.username}</span>
                 </Link>
                 <button className="btn btn-ghost" onClick={() => void logout()} title="Log out">

@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:bundle": "vite build && vitest run --config vitest.bundle.config.ts"
   },
   "dependencies": {
     "@6mansdle/shared": "*",

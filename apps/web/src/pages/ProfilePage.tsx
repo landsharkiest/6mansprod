@@ -37,7 +37,13 @@ export function ProfilePage() {
     <div className="page container">
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
         {user.avatarUrl ? (
-          <img src={user.avatarUrl} alt="" style={{ width: 64, height: 64, borderRadius: '50%' }} />
+          <img
+            src={user.avatarUrl}
+            alt=""
+            width={64}
+            height={64}
+            style={{ width: 64, height: 64, borderRadius: '50%' }}
+          />
         ) : (
           <span className="avatar" style={{ width: 64, height: 64 }} />
         )}

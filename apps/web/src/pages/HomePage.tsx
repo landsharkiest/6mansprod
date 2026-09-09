@@ -20,6 +20,15 @@ const CHANGELOG = [
   { version: 'v1.0.0', date: 'Aug 2025', changes: ['Initial release'] },
 ];
 
+// Home is the one eager route, so it's the natural place to warm the Daily chunk before the
+// visitor commits to the click — a hover (or touchstart/focus, for touch and keyboard nav)
+// kicks off the same dynamic import React.lazy uses in App.tsx, so by the time the click lands
+// the chunk is usually already in the browser's cache. Calling it more than once is harmless;
+// the module loader dedupes concurrent/repeat requests for the same specifier.
+function prefetchDailyPage() {
+  void import('./DailyPage');
+}
+
 export function HomePage() {
   const { user } = useAuth();
   const [dailyNumber, setDailyNumber] = useState<number | null>(null);
@@ -65,7 +74,13 @@ export function HomePage() {
           <b>One daily challenge for everyone</b>, unlimited practice.
         </p>
         <div className="hero-actions">
-          <Link to="/daily" className="btn btn-green btn-lg">
+          <Link
+            to="/daily"
+            className="btn btn-green btn-lg"
+            onMouseEnter={prefetchDailyPage}
+            onTouchStart={prefetchDailyPage}
+            onFocus={prefetchDailyPage}
+          >
             Play today's daily
           </Link>
           <Link to="/play" className="btn btn-lg">
