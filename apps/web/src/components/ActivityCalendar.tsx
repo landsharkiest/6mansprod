@@ -30,9 +30,10 @@ export function ActivityCalendar({ activity }: { activity: ActivityDay[] }) {
     const byDate = new Map(activity.map((a) => [a.date, a]));
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    // Start on the Sunday that begins the window so columns line up as full weeks.
+    // The grid is WEEKS full Sunday..Saturday columns ending on the Saturday of the current week,
+    // so today is always inside the last column and later days render as "future".
     const start = new Date(today);
-    start.setUTCDate(start.getUTCDate() - (WEEKS * 7 - 1) - today.getUTCDay());
+    start.setUTCDate(start.getUTCDate() + (6 - today.getUTCDay()) - (WEEKS * 7 - 1));
 
     const cells: Array<{ date: string; week: number; dow: number; day: ActivityDay | null; future: boolean }> = [];
     const monthLabels: Array<{ week: number; label: string }> = [];
