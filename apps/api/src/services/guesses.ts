@@ -6,6 +6,7 @@ import { utcToday } from '../lib/dates.js';
 import { clipStats, getClip } from './clips.js';
 import { applyDailyResult, getOrCreateDaily } from './daily.js';
 import { applyEndlessResult, readRun } from './endless.js';
+import { awardGuessAchievements } from './achievements.js';
 
 interface SubmitArgs {
   clipId: string;
@@ -51,6 +52,7 @@ export async function submitGuess({ clipId, guessedRank, mode, userId }: SubmitA
 
     let streak: GuessResponse['streak'];
     let run: GuessResponse['run'];
+    let newAchievements: GuessResponse['newAchievements'] = [];
     if (userId !== null) {
       if (daily) {
         // The daily is answered once per user, so it always counts.
@@ -58,6 +60,14 @@ export async function submitGuess({ clipId, guessedRank, mode, userId }: SubmitA
       } else {
         run = counted ? await applyEndlessResult(client, userId, correct) : await readRun(client, userId);
       }
+      newAchievements = await awardGuessAchievements(client, {
+        userId,
+        mode,
+        correct,
+        counted,
+        dailyStreakCurrent: streak?.current,
+        endlessRunCurrent: run?.current,
+      });
     }
 
     const stats = await clipStats(client, clip);
@@ -68,6 +78,7 @@ export async function submitGuess({ clipId, guessedRank, mode, userId }: SubmitA
       distance: rankDistance(guessedRank, clip.rank),
       stats,
       counted,
+      newAchievements,
       ...(streak ? { streak } : {}),
       ...(run ? { run } : {}),
     };

@@ -53,6 +53,7 @@ describe('GameBoard', () => {
       distance: 0,
       stats: stats({ actualRank: 'S' }),
       counted: true,
+      newAchievements: [],
     };
     vi.mocked(api.guess).mockResolvedValueOnce(result);
 
@@ -68,7 +69,7 @@ describe('GameBoard', () => {
       <GameBoard
         clip={clip}
         mode="endless"
-        initialResult={{ correct: true, guessedRank: 'S', actualRank: 'S', distance: 0, stats: stats(), counted: true }}
+        initialResult={{ correct: true, guessedRank: 'S', actualRank: 'S', distance: 0, stats: stats(), counted: true, newAchievements: [] }}
       />,
     );
     expect(screen.getByText('Correct!')).toBeInTheDocument();
@@ -79,7 +80,7 @@ describe('GameBoard', () => {
       <GameBoard
         clip={clip}
         mode="endless"
-        initialResult={{ correct: false, guessedRank: 'X', actualRank: 'S', distance: 1, stats: stats(), counted: true }}
+        initialResult={{ correct: false, guessedRank: 'X', actualRank: 'S', distance: 1, stats: stats(), counted: true, newAchievements: [] }}
       />,
     );
     expect(screen.getByText('So close, one rank off')).toBeInTheDocument();
@@ -90,7 +91,7 @@ describe('GameBoard', () => {
       <GameBoard
         clip={clip}
         mode="endless"
-        initialResult={{ correct: false, guessedRank: 'A', actualRank: 'S', distance: 2, stats: stats(), counted: true }}
+        initialResult={{ correct: false, guessedRank: 'A', actualRank: 'S', distance: 2, stats: stats(), counted: true, newAchievements: [] }}
       />,
     );
     expect(screen.getByText('Two ranks off')).toBeInTheDocument();
@@ -101,7 +102,7 @@ describe('GameBoard', () => {
       <GameBoard
         clip={clip}
         mode="endless"
-        initialResult={{ correct: true, guessedRank: 'S', actualRank: 'S', distance: 0, stats: stats(), counted: false }}
+        initialResult={{ correct: true, guessedRank: 'S', actualRank: 'S', distance: 0, stats: stats(), counted: false, newAchievements: [] }}
       />,
     );
     expect(screen.getByText(/already answered this clip/i)).toBeInTheDocument();
@@ -119,6 +120,7 @@ describe('GameBoard', () => {
           distance: 0,
           stats: stats(),
           counted: true,
+          newAchievements: [],
           streak: { current: 3, best: 7 },
         }}
       />,
@@ -141,6 +143,7 @@ describe('GameBoard', () => {
           distance: 0,
           stats: stats(),
           counted: true,
+          newAchievements: [],
           run: { current: 4, best: 9 },
         }}
       />,

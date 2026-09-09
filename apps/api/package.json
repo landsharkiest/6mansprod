@@ -12,7 +12,8 @@
     "test:unit": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:db": "vitest run --config vitest.db.config.ts",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate.ts",
+    "backfill:achievements": "tsx src/scripts/backfillAchievements.ts"
   },
   "dependencies": {
     "@6mansdle/shared": "*",

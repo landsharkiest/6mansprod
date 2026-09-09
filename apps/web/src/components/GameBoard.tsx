@@ -7,6 +7,7 @@ import { DistributionChart } from './DistributionChart';
 import { fireConfetti } from '../lib/confetti';
 import { isConfirmKey, isNativeActivationTarget, isReplayKey, isTypingTarget, rankForKey } from '../lib/shortcuts';
 import { ReportClipForm } from './ReportClipForm';
+import { AchievementToast } from './AchievementToast';
 
 interface Props {
   clip: PlayableClip;
@@ -90,6 +91,8 @@ export function GameBoard({ clip, mode, initialResult = null, onResult, footer, 
 
   return (
     <div className="game">
+      {/* Results saved in localStorage before achievements existed have no list; treat as none. */}
+      {result && <AchievementToast achievements={result.newAchievements ?? []} />}
       <div className="video-frame">
         <video
           ref={videoRef}

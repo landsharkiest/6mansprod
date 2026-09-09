@@ -40,6 +40,31 @@ queue. Admins (Discord ids in `ADMIN_DISCORD_IDS`) approve, correct the rank, re
 The browser never holds AWS credentials. Remove the old Cognito identity pool's unauthenticated S3 write
 policy once the old site is retired.
 
+## Achievements
+
+Badges live in `packages/shared/src/achievements.ts` — a plain data array (id, name, description, emoji,
+tier), so adding one is a one-line addition there plus a trigger condition in
+`apps/api/src/services/achievements.ts`'s `evaluateAchievements`. That function is pure: it takes a
+snapshot of a user's state right after a guess (counts, streak, run, distinct ranks correct, hour of day,
+etc.) and the set of ids they already hold, and returns what's newly earned. `guesses.ts` calls the DB-facing
+wrapper (`awardGuessAchievements`) inside the same transaction as the guess insert and streak/run update, so
+an achievement is never recorded for a guess that didn't actually commit. The `contributor` badge is the one
+exception — it isn't guess-driven, so it's awarded directly from the clip-approval transaction in
+`routes/admin.ts`.
+
+The snapshot is built from data the app already tracks incrementally (`user_daily_stats.played/correct`,
+`user_endless_stats.played/correct`) rather than scanning `guesses` on every request. The two exceptions —
+whether a user has now correctly guessed every rank, and whether their previous daily was wrong (for the
+`comeback` badge) — are single indexed lookups, and only run when the relevant achievement isn't already
+earned.
+
+Existing players who played before this feature shipped won't be missing badges they'd already earned:
+run `npm run backfill:achievements -w apps/api` once after migrating. It re-derives each user's badges from
+`user_daily_stats`/`user_endless_stats` best-ever streak/run plus a few aggregate queries over `guesses` and
+`clips` (time-of-day, comeback, contributor), feeding the same `evaluateAchievements` used live. Backfilled
+badges get `earned_at = now()` rather than the historical moment they were actually earned, since that
+moment isn't reconstructable from the aggregate tables.
+
 ## Production infrastructure (us-east-1, account 780930530902)
 
 | Resource | Name |

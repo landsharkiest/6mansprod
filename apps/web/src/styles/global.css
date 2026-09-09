@@ -1131,3 +1131,120 @@ textarea {
   margin-left: auto;
   font-size: 0.85rem;
 }
+
+/* ---------- Achievements ---------- */
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.achievement {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.achievement.locked {
+  opacity: 0.5;
+}
+
+.achievement.earned {
+  border-color: rgba(245, 179, 1, 0.4);
+}
+
+.achievement.earned.tier-gold {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(245, 179, 1, 0.25) inset;
+}
+
+.achievement-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.achievement.locked .achievement-emoji {
+  filter: grayscale(1);
+}
+
+.achievement-body {
+  min-width: 0;
+}
+
+.achievement-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.achievement-desc {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.achievement-date {
+  color: var(--gold);
+  font-size: 0.75rem;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* ---------- Achievement unlock toast ---------- */
+.achievement-toast {
+  position: fixed;
+  top: calc(var(--nav-h) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: grid;
+  gap: 8px;
+  width: min(92vw, 380px);
+}
+
+.achievement-toast-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  font-size: 0.9rem;
+  animation: achievement-toast-in 0.2s ease-out;
+}
+
+.achievement-toast-emoji {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.achievement-toast-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.achievement-toast-close:hover {
+  color: var(--text);
+}
+
+@keyframes achievement-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
