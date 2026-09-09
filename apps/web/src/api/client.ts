@@ -4,6 +4,12 @@ import type {
   ChallengeGuessRequest,
   ChallengeGuessResponse,
   ChallengeResponse,
+  BlitzFinishResponse,
+  BlitzGuessResponse,
+  BlitzLeaderboardPeriod,
+  BlitzLeaderboardResponse,
+  BlitzMeBestResponse,
+  BlitzStartResponse,
   ClipReport,
   ClipStatus,
   CommunityStats,
@@ -100,6 +106,29 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+  blitzStart: () => request<BlitzStartResponse>('/api/blitz/start', { method: 'POST' }),
+  /**
+   * A 410 here isn't an error to surface -- it's the server telling us the run is already over,
+   * with the final summary attached. So this returns a discriminated result instead of throwing.
+   */
+  blitzGuess: async (runId: number, clipId: string, rank: Rank): Promise<
+    { expired: false; result: BlitzGuessResponse } | { expired: true; summary: BlitzFinishResponse }
+  > => {
+    const res = await fetch(`${API_BASE}/api/blitz/${runId}/guess`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clipId, rank }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 410) return { expired: true, summary: body as BlitzFinishResponse };
+    if (!res.ok) throw new ApiRequestError(res.status, body.error ?? res.statusText, body.details);
+    return { expired: false, result: body as BlitzGuessResponse };
+  },
+  blitzFinish: (runId: number) => request<BlitzFinishResponse>(`/api/blitz/${runId}/finish`, { method: 'POST' }),
+  blitzLeaderboard: (period: BlitzLeaderboardPeriod = 'all') =>
+    request<BlitzLeaderboardResponse>(`/api/blitz/leaderboard?period=${period}`),
+  blitzMeBest: () => request<BlitzMeBestResponse>('/api/blitz/me/best'),
 };
 
 /** Upload straight to S3 with the presigned PUT, reporting progress. */

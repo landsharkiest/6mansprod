@@ -348,3 +348,71 @@ export function challengeVerdict(myCorrect: boolean, creatorCorrect: boolean): C
   if (myCorrect === creatorCorrect) return 'tie';
   return myCorrect ? 'beat' : 'lost';
 }
+
+// ---------------------------------------------------------------------------------------------
+// Blitz: 90-second timed mode. All scoring is server-authoritative -- clients only ever display
+// what the server already computed, they never submit elapsed time or points themselves.
+// ---------------------------------------------------------------------------------------------
+
+/** Score/accuracy/streak summary for one blitz run, shared by /finish, the 410 body, and /me/best. */
+export interface BlitzRunSummary {
+  runId: number;
+  score: number;
+  correctCount: number;
+  totalCount: number;
+  bestStreak: number;
+}
+
+export interface BlitzStartResponse {
+  runId: number;
+  /** ISO timestamp; the run is authoritatively over once the server clock passes this. */
+  endsAt: string;
+  clip: PlayableClip;
+}
+
+export interface BlitzGuessRequest {
+  clipId: string;
+  rank: Rank;
+}
+
+export interface BlitzGuessResponse {
+  correct: boolean;
+  actualRank: Rank;
+  /** Points awarded for this guess (0 for a wrong guess). */
+  points: number;
+  score: number;
+  correctCount: number;
+  totalCount: number;
+  currentStreak: number;
+  bestStreak: number;
+  /** Updated end-of-run instant (a wrong guess shortens it by the time penalty). */
+  endsAt: string;
+  /** Null once the run has ended -- there is nothing left to play. */
+  nextClip: PlayableClip | null;
+  /** True if this guess ended the run (time penalty pushed it past now, or it was already over). */
+  finished: boolean;
+}
+
+export interface BlitzFinishResponse extends BlitzRunSummary {
+  finishedAt: string;
+}
+
+export type BlitzLeaderboardPeriod = 'today' | 'week' | 'all';
+
+export interface BlitzLeaderboardEntry {
+  user: Pick<PublicUser, 'id' | 'username' | 'avatarUrl'>;
+  score: number;
+  correctCount: number;
+  totalCount: number;
+  bestStreak: number;
+  finishedAt: string;
+}
+
+export interface BlitzLeaderboardResponse {
+  period: BlitzLeaderboardPeriod;
+  entries: BlitzLeaderboardEntry[];
+}
+
+export interface BlitzMeBestResponse {
+  best: BlitzRunSummary | null;
+}

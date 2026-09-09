@@ -42,6 +42,26 @@ export async function pickRandomApprovedClip(excludeId?: string): Promise<ClipRo
   return clip;
 }
 
+
+/**
+ * A random approved clip excluding a whole set of ids (e.g. everything already served in a
+ * blitz run, so a normal-length run doesn't repeat itself). Falls back to any approved clip
+ * once every clip has been excluded, so a run never dead-ends just because the pool is small.
+ */
+export async function pickRandomApprovedClipExcluding(excludeIds: readonly string[]): Promise<ClipRow> {
+  const { rows } = await pool.query<ClipRow>(
+    `SELECT id, s3_key, rank, status, content_type
+       FROM clips
+      WHERE status = 'approved' AND upload_completed AND NOT hidden AND NOT (id = ANY($1::uuid[]))
+      ORDER BY random()
+      LIMIT 1`,
+    [excludeIds],
+  );
+  if (rows[0]) return rows[0];
+  // Every approved clip has already been shown this run -- recycle the pool rather than error out.
+  return pickRandomApprovedClip();
+}
+
 /** Row shape for the admin clip list and for a clip joined onto an admin report. */
 export interface AdminClipRow {
   id: string;

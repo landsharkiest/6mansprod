@@ -18,6 +18,7 @@ import { meRouter, usersRouter } from './routes/me.js';
 import { uploadsRouter } from './routes/uploads.js';
 import { adminRouter } from './routes/admin.js';
 import { challengesRouter } from './routes/challenges.js';
+import { blitzRouter } from './routes/blitz.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -147,6 +148,7 @@ export function createApp(): express.Express {
   app.use('/api/uploads', uploadLimiter, uploadsRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/challenges', challengesRouter);
+  app.use('/api/blitz', blitzRouter);
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 

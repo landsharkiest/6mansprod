@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { useAuth } from './auth/AuthContext';
 import { HomePage } from './pages/HomePage';
 import { PlayPage } from './pages/PlayPage';
+import { BlitzPage } from './pages/BlitzPage';
 import { DailyPage } from './pages/DailyPage';
 import { ChallengePage } from './pages/ChallengePage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
@@ -26,6 +27,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/play" element={<PlayPage />} />
+        <Route path="/blitz" element={<BlitzPage />} />
         <Route path="/daily" element={<DailyPage />} />
         <Route path="/c/:token" element={<ChallengePage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />

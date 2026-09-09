@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildShareText } from './share';
+import { buildBlitzShareText, buildShareText } from './share';
 
 const base = { number: 42, date: '2026-09-09' } as const;
 
@@ -68,5 +68,38 @@ describe('buildShareText', () => {
   it('leads with the daily number and date', () => {
     const text = buildShareText({ number: 7, date: '2026-01-01', correct: true, guessedRank: 'H', actualRank: 'H', distance: 0 });
     expect(text.split('\n')[0]).toBe('6mansdle #7 · 2026-01-01');
+  });
+});
+
+describe('buildBlitzShareText', () => {
+  it('formats score, accuracy, and best streak', () => {
+    const text = buildBlitzShareText({ score: 780, correctCount: 6, totalCount: 8, bestStreak: 4 });
+    expect(text.split('\n')).toEqual([
+      '6mansdle Blitz ⚡',
+      '780 pts · 6/8 correct',
+      '🔥 best streak 4',
+      'https://6mansdle.com/blitz',
+    ]);
+  });
+
+  it('ends with the blitz URL by default', () => {
+    const text = buildBlitzShareText({ score: 100, correctCount: 1, totalCount: 1, bestStreak: 1 });
+    expect(text.endsWith('https://6mansdle.com/blitz')).toBe(true);
+  });
+
+  it('accepts a custom url', () => {
+    const text = buildBlitzShareText({ score: 100, correctCount: 1, totalCount: 1, bestStreak: 1, url: 'https://example.com/blitz' });
+    expect(text.endsWith('https://example.com/blitz')).toBe(true);
+  });
+
+  it('never includes a clip id or any clip-identifying field', () => {
+    const text = buildBlitzShareText({ score: 500, correctCount: 4, totalCount: 5, bestStreak: 3 });
+    expect(text).not.toMatch(/clip/i);
+  });
+
+  it('handles a zero score / zero correct run', () => {
+    const text = buildBlitzShareText({ score: 0, correctCount: 0, totalCount: 2, bestStreak: 0 });
+    expect(text).toContain('0 pts · 0/2 correct');
+    expect(text).toContain('🔥 best streak 0');
   });
 });
