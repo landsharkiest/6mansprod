@@ -8,12 +8,18 @@ BRANCH="${AMPLIFY_BRANCH:-master}"
 API_ORIGIN="${VITE_API_ORIGIN:-https://backend.6mansdle.com}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ZIP="${TMPDIR:-/tmp}/6mansdle-web-$$.zip"
+# Pick an interpreter that actually runs: on Windows, `python3` may be the Store stub that only prints an error.
+PY=""
+for c in python3 python py; do
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'pass' >/dev/null 2>&1; then PY="$c"; break; fi
+done
+[ -n "$PY" ] || { echo "no working python found"; exit 1; }
 
 cd "$ROOT"
 VITE_API_ORIGIN="$API_ORIGIN" npm run build -w apps/web
 
 # Zip with forward-slash entry names; PowerShell's Compress-Archive writes backslashes, which Amplify mis-stores.
-python3 - "$ROOT/apps/web/dist" "$ZIP" <<'PY'
+"$PY" - "$ROOT/apps/web/dist" "$ZIP" <<'PY'
 import os, sys, zipfile
 src, out = sys.argv[1], sys.argv[2]
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
@@ -24,8 +30,8 @@ with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
 PY
 
 dep=$(aws amplify create-deployment --app-id "$APP_ID" --branch-name "$BRANCH" --output json)
-job=$(echo "$dep" | python3 -c 'import json,sys; print(json.load(sys.stdin)["jobId"])')
-url=$(echo "$dep" | python3 -c 'import json,sys; print(json.load(sys.stdin)["zipUploadUrl"])')
+job=$(echo "$dep" | "$PY" -c 'import json,sys; print(json.load(sys.stdin)["jobId"])')
+url=$(echo "$dep" | "$PY" -c 'import json,sys; print(json.load(sys.stdin)["zipUploadUrl"])')
 curl -fsS -X PUT -H "Content-Type: application/zip" --upload-file "$ZIP" "$url" >/dev/null
 aws amplify start-deployment --app-id "$APP_ID" --branch-name "$BRANCH" --job-id "$job" --query 'jobSummary.status' --output text
 for _ in $(seq 1 40); do
