@@ -33,6 +33,11 @@ const schema = z.object({
   MAX_UPLOAD_MB: z.coerce.number().positive().default(50),
   /** Git SHA of the deployed build, if set (see infra/deploy.sh). Powers GET /api/version. */
   GIT_SHA: z.string().optional(),
+  /**
+   * Shared secret the Discord bot presents as `Authorization: Bearer <token>` on /api/bot/*.
+   * Unset (the default) disables the bot integration entirely — those routes answer 503.
+   */
+  BOT_API_TOKEN: z.string().optional().default(''),
 });
 
 const parsed = schema.safeParse(process.env);

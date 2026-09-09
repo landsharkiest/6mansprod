@@ -8,7 +8,8 @@ reviewed clip-submission pipeline.
 ```
 apps/api        Express + TypeScript API (Postgres, S3, Discord OAuth sessions)
 apps/web        Vite + React + TypeScript frontend
-packages/shared Ranks and API types shared by both
+apps/bot        Discord bot (discord.js) — clip submission and daily reminders from Discord
+packages/shared Ranks and API types shared by all three
 ```
 
 ## Running locally
@@ -65,6 +66,56 @@ run `npm run backfill:achievements -w apps/api` once after migrating. It re-deri
 badges get `earned_at = now()` rather than the historical moment they were actually earned, since that
 moment isn't reconstructable from the aggregate tables.
 
+## Discord bot
+
+`apps/bot` is a standalone Node/TypeScript process (discord.js) that lets players submit clips
+and check the daily challenge from Discord, without ever visiting the site. It talks to the API
+over a separate, unauthenticated-by-browser path: `apps/api/src/routes/bot.ts`, mounted at
+`/api/bot` and gated by `requireBotToken` (constant-time comparison of `Authorization: Bearer
+<BOT_API_TOKEN>`). That router shares its upload logic with the browser flow via
+`apps/api/src/services/uploads.ts` — same presign/complete/list functions, just called with a
+Discord user's id instead of a session's. Leaving `BOT_API_TOKEN` unset turns the whole
+integration off (every `/api/bot/*` route answers 503), so a deploy is safe before the bot is
+configured.
+
+Commands: `/submit rank:<rank> clip:<attachment>` presigns, streams the attachment straight from
+Discord's CDN to S3, and completes the upload, replying ephemerally. `/daily` posts the current
+daily's number, date, and play count publicly. `/myuploads` lists the caller's own submissions
+and their review status, ephemerally. A `DailyScheduler` (`apps/bot/src/lib/scheduler.ts`, a
+plain `setInterval` poll — no cron dependency) posts "New 6mansdle daily #N is live: ..." into
+`DAILY_CHANNEL_ID` once per UTC day, the first tick at or after 00:05 UTC.
+
+### One-time setup
+
+1. **Create the bot application**: [Discord Developer Portal](https://discord.com/developers/applications)
+   → New Application. Under **Bot**, add a bot and copy its token (`DISCORD_BOT_TOKEN`); copy the
+   **Application ID** from General Information (`DISCORD_CLIENT_ID`).
+2. **Scopes and permissions**: build an invite URL with scopes `bot` and `applications.commands`,
+   and bot permissions `Send Messages` + `Use Slash Commands` (view/send in the channel you'll use
+   for the daily post is enough — no elevated permissions needed):
+   ```
+   https://discord.com/oauth2/authorize?client_id=<DISCORD_CLIENT_ID>&scope=bot+applications.commands&permissions=2048
+   ```
+   Open it, pick your server, and authorize.
+3. **Env file**: on the host, create `/opt/6mansdle/app/bot.env` (owned by `sixmansdle`, mode 600 —
+   same convention as `/opt/6mansdle/app/.env`) with:
+   ```
+   DISCORD_BOT_TOKEN=...
+   DISCORD_CLIENT_ID=...
+   GUILD_ID=...           # optional: your server's id, for instant guild-scoped command registration
+   API_ORIGIN=https://backend.6mansdle.com
+   BOT_API_TOKEN=...      # generate like SESSION_SECRET; must match the API's BOT_API_TOKEN below
+   DAILY_CHANNEL_ID=...   # optional: channel id for the scheduled daily post
+   ```
+   Add the matching `BOT_API_TOKEN=...` to `/opt/6mansdle/app/.env` (the API's env file) so the
+   two sides agree — the bot integration stays off until this is set there.
+4. **Register the slash commands** (once, and again any time a command's shape changes):
+   `npm run register -w apps/bot` (needs the same env as above — run it locally with a `.env` in
+   `apps/bot`, or on the host after `bot.env` is in place).
+5. **Deploy**: `infra/deploy.sh` installs and starts the `6mansdle-bot` systemd unit automatically
+   once it sees `/opt/6mansdle/app/bot.env` — nothing else to do. Locally, `npm run dev -w apps/bot`
+   or `npm run start -w apps/bot`.
+
 ## Production infrastructure (us-east-1, account 780930530902)
 
 | Resource | Name |
@@ -99,7 +150,7 @@ Open a shell on the host with `aws ssm start-session --target i-01604db9d7bfc46e
 ## Testing
 
 `npm test` runs the whole suite: `packages/shared` typecheck, the API's unit and integration
-tests, then the web unit tests.
+tests, then the web unit tests, then the bot's unit tests.
 
 - **API unit tests** (`npm run test:unit -w apps/api`) are pure — no database, no network. They
   cover small logic like the daily streak's date math.
@@ -113,9 +164,17 @@ tests, then the web unit tests.
   `apps/api/test/support/client.ts`). Requires a local Postgres reachable at
   `postgres://postgres:postgres@localhost:5432` (see `docker-compose.yml`); these tests run
   sequentially against one shared database, so they aren't safe to parallelise across files.
+  `npm run test:integration:bot -w apps/api` covers the *enabled* `/api/bot/*` routes under a
+  separate vitest config (`vitest.integration.bot.config.ts`) that sets `BOT_API_TOKEN`, since the
+  main integration config deliberately leaves it unset to match a real not-yet-configured
+  deployment (see `test/integration/botDisabled.test.ts` for that 503 path).
 - **Web tests** (`npm test -w apps/web`) use Vitest + Testing Library + jsdom to cover the key
   components (`ActivityCalendar`, `RankPicker`, `GameBoard`) and the daily countdown's pure date
   math (`apps/web/src/lib/countdown.ts`).
+- **Bot tests** (`npm run test -w apps/bot`) are pure unit tests — attachment validation
+  (`src/lib/attachment.ts`), the daily-post scheduler's time math (`src/lib/scheduler.ts`), and
+  Discord message formatting (`src/lib/messages.ts`). None of it imports discord.js or touches
+  the network.
 
 ## Scripts
 
@@ -123,8 +182,12 @@ tests, then the web unit tests.
 | --------------------------------- | -------------------------------------------------------- |
 | `npm run dev`                     | API + web with hot reload                                |
 | `npm run typecheck`               | Type-check every workspace (app and test code)           |
-| `npm test`                        | Shared typecheck, API unit + integration tests, web tests |
+| `npm test`                        | Shared typecheck, API unit + integration tests, web tests, bot tests |
 | `npm run test:unit -w apps/api`   | API unit tests only (no database)                        |
 | `npm run test:integration -w apps/api` | API integration tests against `sixmansdle_test`      |
+| `npm run test:integration:bot -w apps/api` | Enabled `/api/bot/*` integration tests (own config, sets `BOT_API_TOKEN`) |
 | `npm run build`                   | Production build of API and web                          |
 | `npm run db:migrate`              | Apply pending SQL migrations                              |
+| `npm run dev -w apps/bot`         | Discord bot with hot reload                               |
+| `npm run register -w apps/bot`    | Register the bot's slash commands with Discord            |
+| `npm run test -w apps/bot`        | Bot unit tests (no network, no Discord connection)        |

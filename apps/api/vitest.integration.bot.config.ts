@@ -1,15 +1,13 @@
 import { defineConfig } from 'vitest/config';
 
-// Integration tests hit a real local Postgres (sixmansdle_test) and exercise the Express app
-// end-to-end through supertest. They share the database, so files must not run in parallel.
+// Same DB-backed integration setup as vitest.integration.config.ts, isolated into its own config
+// only so BOT_API_TOKEN can be set: the main integration suite deliberately runs with it unset
+// (matching the real default-off deployment), and test/integration/bot.test.ts needs it set to
+// exercise the *enabled* /api/bot/* routes. See test/integration/botDisabled.test.ts for the
+// unconfigured (503) path, which runs under the main config.
 export default defineConfig({
   test: {
-    // bot.test.ts covers the *enabled* bot integration and needs BOT_API_TOKEN set, which every
-    // other integration test relies on being unset (the default) so config parses the same way
-    // the real unconfigured-by-default deployment does. It gets its own config/env — see
-    // vitest.integration.bot.config.ts — and its own npm script, `test:integration:bot`.
-    include: ['test/integration/**/*.test.ts'],
-    exclude: ['test/integration/bot.test.ts'],
+    include: ['test/integration/bot.test.ts'],
     globalSetup: ['test/support/globalSetup.ts'],
     setupFiles: ['test/support/setup.ts'],
     fileParallelism: false,
@@ -25,6 +23,7 @@ export default defineConfig({
       S3_BUCKET: 'test-bucket',
       ADMIN_DISCORD_IDS: '',
       LOG_LEVEL: 'silent',
+      BOT_API_TOKEN: 'test-bot-token-32-chars-long-enough',
     },
   },
 });

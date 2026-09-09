@@ -1,0 +1,31 @@
+[Unit]
+Description=6mansdle Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sixmansdle
+Group=sixmansdle
+WorkingDirectory=/opt/6mansdle/app/repo/apps/bot
+# Only installed/enabled by deploy.sh once this file exists — see infra/deploy.sh and the
+# README's "Discord bot" setup section. Distinct from the API's .env: separate secrets
+# (DISCORD_BOT_TOKEN, BOT_API_TOKEN), separate blast radius if one leaks.
+EnvironmentFile=/opt/6mansdle/app/bot.env
+ExecStart=/usr/bin/node /opt/6mansdle/app/repo/node_modules/tsx/dist/cli.mjs src/index.ts
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=15
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/6mansdle/app
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

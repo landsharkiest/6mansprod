@@ -26,8 +26,16 @@ echo "GIT_SHA=$GIT_SHA" > "$APP_DIR/version"
 chown $APP_USER:$APP_USER "$APP_DIR/version"
 chmod 644 "$APP_DIR/version"
 
-# Only the API and shared packages are needed on the host; skip the web app's deps.
-sudo -u $APP_USER bash -c "cd '$REPO_DIR' && npm ci --omit=dev --workspace apps/api --workspace packages/shared --include-workspace-root --no-audit --no-fund"
+# Only workspaces actually run on the host get installed; skip the web app's deps. The bot
+# workspace is only installed once its env file exists (see the bot block below) — installing it
+# unconditionally would be harmless but wasteful before the site owner has configured the bot.
+NPM_WORKSPACES="--workspace apps/api --workspace packages/shared"
+BOT_ENABLED=false
+if [ -f "$APP_DIR/bot.env" ]; then
+  BOT_ENABLED=true
+  NPM_WORKSPACES="$NPM_WORKSPACES --workspace apps/bot"
+fi
+sudo -u $APP_USER bash -c "cd '$REPO_DIR' && npm ci --omit=dev $NPM_WORKSPACES --include-workspace-root --no-audit --no-fund"
 
 install -m 644 "$REPO_DIR/infra/6mansdle-api.service" /etc/systemd/system/6mansdle-api.service
 # certbot rewrites this file to add TLS, so only seed it on first deploy.
@@ -40,12 +48,33 @@ systemctl enable 6mansdle-api >/dev/null
 systemctl restart 6mansdle-api
 systemctl reload nginx
 
+# The bot unit only goes in once /opt/6mansdle/app/bot.env exists, so a plain deploy stays safe
+# (and this script idempotent) before the site owner has created a bot application and dropped
+# its token in. See the README's "Discord bot" section for the one-time setup.
+if [ "$BOT_ENABLED" = true ]; then
+  echo "bot.env present — installing/restarting 6mansdle-bot"
+  install -m 644 "$REPO_DIR/infra/6mansdle-bot.service" /etc/systemd/system/6mansdle-bot.service
+  systemctl daemon-reload
+  systemctl enable 6mansdle-bot >/dev/null
+  systemctl restart 6mansdle-bot
+else
+  echo "no $APP_DIR/bot.env — skipping the Discord bot (see README: Discord bot)"
+fi
+
 for i in $(seq 1 20); do
   if curl -fsS http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
-    echo "health: $(curl -fsS http://127.0.0.1:3001/api/health)"; exit 0
+    echo "health: $(curl -fsS http://127.0.0.1:3001/api/health)"; break
   fi
   sleep 2
+  if [ "$i" = 20 ]; then
+    echo "API did not become healthy; recent log:"
+    journalctl -u 6mansdle-api -n 40 --no-pager
+    exit 1
+  fi
 done
-echo "API did not become healthy; recent log:"
-journalctl -u 6mansdle-api -n 40 --no-pager
-exit 1
+
+if [ "$BOT_ENABLED" = true ] && ! systemctl is-active --quiet 6mansdle-bot; then
+  echo "6mansdle-bot did not stay up; recent log:"
+  journalctl -u 6mansdle-bot -n 40 --no-pager
+  exit 1
+fi
