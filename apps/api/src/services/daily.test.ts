@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { effectiveStreak } from './daily.js';
+import { effectiveStreak, nextDailyNumber } from './daily.js';
 import { previousDay, utcToday } from '../lib/dates.js';
 
 describe('dates', () => {
@@ -22,5 +22,15 @@ describe('effectiveStreak', () => {
   it('drops a lapsed streak but keeps the best', () => {
     expect(effectiveStreak({ current_streak: 4, best_streak: 9, last_played: '2026-09-05' }, today)).toEqual({ current: 0, best: 9 });
     expect(effectiveStreak({ current_streak: 0, best_streak: 0, last_played: null }, today)).toEqual({ current: 0, best: 0 });
+  });
+});
+
+describe('nextDailyNumber', () => {
+  it('starts at 1 when no daily has ever run', () => {
+    expect(nextDailyNumber(null)).toBe(1);
+  });
+  it('is one past the most recent daily number', () => {
+    expect(nextDailyNumber(1)).toBe(2);
+    expect(nextDailyNumber(41)).toBe(42);
   });
 });

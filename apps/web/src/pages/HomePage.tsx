@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../auth/AuthContext';
@@ -21,6 +22,22 @@ const CHANGELOG = [
 
 export function HomePage() {
   const { user } = useAuth();
+  const [dailyNumber, setDailyNumber] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .dailyMeta()
+      .then((meta) => {
+        if (!cancelled) setDailyNumber(meta.number);
+      })
+      .catch(() => {
+        /* chip is a nice-to-have; ignore failures */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="hero">
@@ -41,6 +58,7 @@ export function HomePage() {
           </motion.span>
         </h1>
         <div className="hero-rule" />
+        {dailyNumber !== null && <div className="daily-chip">Today's daily: #{dailyNumber}</div>}
         <p className="hero-tagline">
           Watch a clip from a 6mans match and guess the rank.
           <br />

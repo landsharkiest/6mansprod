@@ -65,6 +65,13 @@ export interface DailyResponse {
   result: GuessResponse | null;
 }
 
+/** Lightweight daily info for chips/badges — never creates today's challenge as a side effect. */
+export interface DailyMeta {
+  date: string;
+  /** Ordinal day number since the first daily challenge, first day = 1. */
+  number: number;
+}
+
 export interface OverallStats {
   totalGuesses: number;
   correctGuesses: number;

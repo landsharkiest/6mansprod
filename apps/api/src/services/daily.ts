@@ -82,6 +82,28 @@ export async function getDailyNumber(day: string): Promise<number> {
   return rows[0]?.number ?? 1;
 }
 
+/** Pure: given the previous daily's ordinal number (or null if none exists yet), what the next one is. */
+export function nextDailyNumber(lastNumber: number | null): number {
+  return lastNumber === null ? 1 : lastNumber + 1;
+}
+
+/**
+ * Lightweight daily info for a UI chip: the date and its ordinal number, without the
+ * side effect of creating today's challenge (unlike {@link getOrCreateDaily}).
+ * If today's row doesn't exist yet, the number is guessed as one past the most recent day's.
+ */
+export async function getDailyMeta(day = utcToday()): Promise<{ date: string; number: number }> {
+  const existing = await loadDaily(day);
+  if (existing) return { date: day, number: await getDailyNumber(day) };
+
+  const { rows } = await pool.query<{ day: string | null }>(
+    `SELECT to_char(MAX(day), 'YYYY-MM-DD') AS day FROM daily_challenges`,
+  );
+  const lastDay = rows[0]?.day ?? null;
+  const lastNumber = lastDay ? await getDailyNumber(lastDay) : null;
+  return { date: day, number: nextDailyNumber(lastNumber) };
+}
+
 export interface StreakState {
   current: number;
   best: number;
