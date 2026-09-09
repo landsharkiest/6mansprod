@@ -124,7 +124,11 @@ export function LeaderboardPage() {
                       <td className={`rank-cell ${i < 3 ? 'top' : ''}`}>{i + 1}</td>
                       <td>
                         <Link to={`/u/${r.user.id}`} className="user-cell user-link">
-                          {r.user.avatarUrl ? <img className="avatar" src={r.user.avatarUrl} alt="" /> : <span className="avatar" />}
+                          {r.user.avatarUrl ? (
+                            <img className="avatar" src={r.user.avatarUrl} alt="" width={28} height={28} />
+                          ) : (
+                            <span className="avatar" />
+                          )}
                           {r.user.username}
                         </Link>
                       </td>
@@ -168,7 +172,11 @@ export function LeaderboardPage() {
                       <td className={`rank-cell ${i < 3 ? 'top' : ''}`}>{i + 1}</td>
                       <td>
                         <Link to={`/u/${r.user.id}`} className="user-cell user-link">
-                          {r.user.avatarUrl ? <img className="avatar" src={r.user.avatarUrl} alt="" /> : <span className="avatar" />}
+                          {r.user.avatarUrl ? (
+                            <img className="avatar" src={r.user.avatarUrl} alt="" width={28} height={28} />
+                          ) : (
+                            <span className="avatar" />
+                          )}
                           {r.user.username}
                         </Link>
                       </td>

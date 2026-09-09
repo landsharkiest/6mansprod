@@ -116,6 +116,22 @@ tests, then the web unit tests.
 - **Web tests** (`npm test -w apps/web`) use Vitest + Testing Library + jsdom to cover the key
   components (`ActivityCalendar`, `RankPicker`, `GameBoard`) and the daily countdown's pure date
   math (`apps/web/src/lib/countdown.ts`).
+- **Bundle size** (`npm run test:bundle -w apps/web`) runs a production `vite build` and asserts
+  on the resulting chunk sizes (`apps/web/test/bundle.test.ts`) — the entry chunk under 250 KB
+  minified, no chunk over 450 KB. Not part of `npm test`; the manualChunks split in
+  `apps/web/vite.config.ts` is what keeps recharts and framer-motion out of the entry chunk.
+- **End-to-end** (`npm run e2e`, root) is a small [Playwright](https://playwright.dev) smoke suite
+  (`e2e/`, Chromium only) that drives the real app in a browser: home, the daily (as a guest),
+  endless mode (signed in), the leaderboard tabs, a profile page, the admin review flow, Blitz,
+  and the 404 page. `e2e/support/global-setup.ts` spins up a throwaway API on port 3101 against
+  its own database (`sixmansdle_e2e` by default, override with `E2E_DB_NAME`) and the Vite dev
+  server on port 5273 (proxying to that API via `VITE_DEV_API_TARGET`, see
+  `apps/web/vite.config.ts`), seeding 3 approved clips whose `s3_key`s point at public MDN sample
+  videos so playback actually works (`CDN_ORIGIN=https://interactive-examples.mdn.mozilla.net`).
+  Both throwaway servers are torn down after the run. Install the browser once with
+  `npx playwright install chromium` before the first run. Not part of `npm test` — it needs a
+  browser — and safe to run alongside the checkout's own dev servers on 3001/5173 since it never
+  touches those ports or databases.
 
 ## Scripts
 
@@ -126,5 +142,7 @@ tests, then the web unit tests.
 | `npm test`                        | Shared typecheck, API unit + integration tests, web tests |
 | `npm run test:unit -w apps/api`   | API unit tests only (no database)                        |
 | `npm run test:integration -w apps/api` | API integration tests against `sixmansdle_test`      |
+| `npm run test:bundle -w apps/web` | Production web build + bundle-size budget check           |
+| `npm run e2e`                     | Playwright smoke suite against a throwaway API + web stack |
 | `npm run build`                   | Production build of API and web                          |
 | `npm run db:migrate`              | Apply pending SQL migrations                              |
