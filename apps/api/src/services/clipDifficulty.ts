@@ -21,7 +21,8 @@ export function topClipsByAccuracy(
 ): ClipDifficulty[] {
   const eligible = clips
     .filter((c) => c.totalGuesses >= minGuesses)
-    .map((c) => ({ clipId: c.clipId, actualRank: c.actualRank, totalGuesses: c.totalGuesses, accuracy: pct(c.correctGuesses, c.totalGuesses) }));
+    // clipId is intentionally dropped from the public shape (see ClipDifficulty in shared).
+    .map((c) => ({ actualRank: c.actualRank, totalGuesses: c.totalGuesses, accuracy: pct(c.correctGuesses, c.totalGuesses) }));
 
   eligible.sort((a, b) => (direction === 'hardest' ? a.accuracy - b.accuracy : b.accuracy - a.accuracy));
   return eligible.slice(0, limit);

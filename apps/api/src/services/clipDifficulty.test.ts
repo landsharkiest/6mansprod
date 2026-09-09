@@ -11,24 +11,25 @@ const clips = [
 describe('topClipsByAccuracy', () => {
   it('excludes clips under the minimum guess threshold', () => {
     const hardest = topClipsByAccuracy(clips, 'hardest', 10, 5);
-    expect(hardest.find((c) => c.clipId === 'low-guesses')).toBeUndefined();
+    expect(hardest.find((c) => c.actualRank === 'S')).toBeUndefined();
   });
 
   it('ranks hardest ascending by accuracy', () => {
     const hardest = topClipsByAccuracy(clips, 'hardest', 10, 5);
-    expect(hardest.map((c) => c.clipId)).toEqual(['hard', 'medium', 'easy']);
-    expect(hardest[0]).toEqual({ clipId: 'hard', actualRank: 'A', totalGuesses: 20, accuracy: 10 });
+    expect(hardest.map((c) => c.actualRank)).toEqual(['A', 'B', 'X']);
+    expect(hardest[0]).toEqual({ actualRank: 'A', totalGuesses: 20, accuracy: 10 });
+    expect(hardest[0]).not.toHaveProperty('clipId');
   });
 
   it('ranks easiest descending by accuracy', () => {
     const easiest = topClipsByAccuracy(clips, 'easiest', 10, 5);
-    expect(easiest.map((c) => c.clipId)).toEqual(['easy', 'medium', 'hard']);
+    expect(easiest.map((c) => c.actualRank)).toEqual(['X', 'B', 'A']);
   });
 
   it('respects the limit', () => {
     const top1 = topClipsByAccuracy(clips, 'hardest', 10, 1);
     expect(top1).toHaveLength(1);
-    expect(top1[0]!.clipId).toBe('hard');
+    expect(top1[0]!.actualRank).toBe('A');
   });
 
   it('returns an empty list when nothing meets the threshold', () => {

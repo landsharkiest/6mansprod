@@ -145,8 +145,8 @@ function ClipDifficultyList({ clips, empty }: { clips: CommunityStats['hardestCl
   if (clips.length === 0) return <p className="muted">{empty}</p>;
   return (
     <ul className="clip-difficulty-list">
-      {clips.map((c) => (
-        <li key={c.clipId}>
+      {clips.map((c, i) => (
+        <li key={`${c.actualRank}-${i}`}>
           <span className="pill" style={{ color: RANK_COLORS[c.actualRank], borderColor: RANK_COLORS[c.actualRank] }}>
             {c.actualRank}
           </span>

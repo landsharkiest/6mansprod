@@ -97,9 +97,11 @@ export interface ConfusionCell {
   count: number;
 }
 
-/** A clip's difficulty summary. Ranks are already revealed after play, so this is safe to expose. */
+/**
+ * A clip's difficulty summary. Deliberately carries no clip id: the play endpoints hand out ids,
+ * so pairing an id with its rank here would let a player look up the answer before guessing.
+ */
 export interface ClipDifficulty {
-  clipId: string;
   actualRank: Rank;
   totalGuesses: number;
   accuracy: number;
