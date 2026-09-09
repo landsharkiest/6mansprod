@@ -14,3 +14,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
+
+// Only register in production builds: in dev the service worker would compete with Vite's own
+// module reloading and cache things mid-edit.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* offline support is a nice-to-have; ignore registration failures */
+    });
+  });
+}
