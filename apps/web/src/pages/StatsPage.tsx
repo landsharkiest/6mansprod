@@ -49,18 +49,19 @@ export function StatsPage() {
             <Stat value={totals.guessesThisWeek.toLocaleString()} label="This week (UTC)" />
           </div>
 
-          {(data.mostOverratedRank || data.mostUnderratedRank) && (
+          {((data.mostOverratedRank && data.mostOverratedRank.avgSignedDistance > 0) ||
+            (data.mostUnderratedRank && data.mostUnderratedRank.avgSignedDistance < 0)) && (
             <div className="card" style={{ marginBottom: 20 }}>
               <div className="card-title">Community bias</div>
               <div className="bias-callouts">
-                {data.mostOverratedRank && (
+                {data.mostOverratedRank && data.mostOverratedRank.avgSignedDistance > 0 && (
                   <p>
                     Players think{' '}
                     <b style={{ color: RANK_COLORS[data.mostOverratedRank.rank] }}>{data.mostOverratedRank.rank}</b> is better than it
                     is — guesses skew {Math.abs(data.mostOverratedRank.avgSignedDistance).toFixed(1)} ranks too generous on average.
                   </p>
                 )}
-                {data.mostUnderratedRank && (
+                {data.mostUnderratedRank && data.mostUnderratedRank.avgSignedDistance < 0 && (
                   <p>
                     Players sleep on{' '}
                     <b style={{ color: RANK_COLORS[data.mostUnderratedRank.rank] }}>{data.mostUnderratedRank.rank}</b> — guesses skew{' '}
