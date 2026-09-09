@@ -7,3 +7,14 @@ import '@testing-library/jest-dom/vitest';
 afterEach(() => {
   cleanup();
 });
+
+// jsdom has no ResizeObserver. recharts' <ResponsiveContainer> (used by DistributionChart /
+// ConfusionMatrix) reads it on mount, so any test that renders the post-guess result screen
+// needs at least a no-op stand-in.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}

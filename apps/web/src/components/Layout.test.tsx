@@ -61,3 +61,23 @@ describe('Layout / how-to-play auto-open', () => {
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
 });
+
+describe('Layout / nav accessibility', () => {
+  beforeEach(() => {
+    localStorage.setItem('sixmansdle.seenHowToPlay', '1'); // keep the how-to-play modal out of the way
+  });
+
+  it('marks the active section via aria-current, and only that one', async () => {
+    renderAt('/leaderboard');
+    await screen.findByText('Leaderboard page content');
+
+    expect(screen.getByRole('link', { name: 'Leaderboard' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Daily' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('names the primary nav landmark so it is distinguishable from other nav regions', async () => {
+    renderAt('/daily');
+    await screen.findByText('Daily page content');
+    expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument();
+  });
+});

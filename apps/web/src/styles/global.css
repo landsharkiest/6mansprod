@@ -9,7 +9,10 @@
   --border-strong: #333333;
   --text: #ffffff;
   --text-muted: #a3a3a3;
-  --text-dim: #737373;
+  /* Was #737373: 3.44:1 against --card-hover / 3.67:1 against --card, both under WCAG AA's
+     4.5:1 for normal text. Lightened to clear 4.5:1 against every surface it's actually used on
+     (4.66:1 on --card-hover, 4.98:1 on --card, 5.48:1 on --bg) while staying visually "dim". */
+  --text-dim: #898989;
   --blurple: #5865f2;
   --blurple-hover: #4752c4;
   --green: #28a745;
@@ -57,6 +60,33 @@ a {
 button {
   font: inherit;
   color: inherit;
+}
+
+/*
+ * Keyboard-only focus ring, site-wide. :focus-visible (rather than :focus) means a mouse click
+ * doesn't leave a ring behind, but Tab navigation always gets a clearly visible one — using the
+ * brand green against the near-black background comfortably clears 3:1 non-text contrast on
+ * every surface in the palette. `:focus:not(:focus-visible)` clears the UA default outline for
+ * the mouse-click case in browsers that don't support :focus-visible naturally suppressing it.
+ */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+[tabindex]:focus:not(:focus-visible) {
+  outline: none;
 }
 
 h1,
@@ -715,6 +745,21 @@ h3 {
   }
   .rank-btn:active:not(:disabled) {
     transform: none;
+  }
+  /*
+   * Blanket fallback: confetti already checks prefers-reduced-motion in JS and no-ops, but
+   * every CSS animation/transition in this file (rank-pulse-once, the loading spinner, the
+   * achievement toast slide-in, hover/press transforms) is decorative motion too. Collapsing
+   * durations to near-zero keeps the end states (and any of our own overrides above) intact
+   * without having to enumerate every rule here individually.
+   */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

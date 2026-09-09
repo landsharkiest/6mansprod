@@ -111,7 +111,9 @@ export function GameBoard({ clip, mode, initialResult = null, onResult, footer, 
 
       {result && (
         <div className="card">
-          <div className={`verdict ${result.correct ? 'correct' : 'wrong'}`}>
+          {/* role="status" + aria-live="polite" announces the verdict once, right when the
+              result card mounts, without interrupting whatever the screen reader is doing. */}
+          <div className={`verdict ${result.correct ? 'correct' : 'wrong'}`} role="status" aria-live="polite">
             <h2>{VERDICTS[result.distance] ?? 'Not this time'}</h2>
             <p>
               You guessed <span className="pill">{result.guessedRank}</span> and the answer was{' '}

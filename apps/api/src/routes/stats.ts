@@ -24,6 +24,9 @@ statsRouter.get(
       body = await loadCommunityStats();
       communityStatsCache.set(body);
     }
+    // Same for every caller and already server-cached for a minute upstream, so a shared/browser
+    // cache holding it for 30s costs nothing extra in staleness.
+    res.set('Cache-Control', 'public, max-age=30');
     res.json(body);
   }),
 );
@@ -110,6 +113,8 @@ statsRouter.get(
       [minPlays, limit],
     );
 
+    // Public, identical for every caller for a given query string — safe to cache briefly.
+    res.set('Cache-Control', 'public, max-age=30');
     const entries: LeaderboardEntry[] = rows.map((r) => ({
       user: { id: r.id, username: r.username, avatarUrl: avatarUrl(r.discord_id, r.avatar_hash) },
       currentStreak: r.current,
