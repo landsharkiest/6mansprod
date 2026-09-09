@@ -92,6 +92,22 @@ export async function getDailyMeta(day = utcToday()): Promise<{ date: string; nu
   return { date: day, number: await getDailyNumber(day) };
 }
 
+/**
+ * How many distinct users have played the given day's daily so far. Zero when the day's
+ * challenge doesn't exist yet (nobody could have played it) — this never creates it, matching
+ * {@link getDailyMeta}'s no-side-effect contract.
+ */
+export async function getDailyPlayedCount(day: string): Promise<number> {
+  const { rows } = await pool.query<{ count: number }>(
+    `SELECT COUNT(DISTINCT g.user_id)::int AS count
+       FROM daily_challenges d
+       JOIN guesses g ON g.daily_id = d.id
+      WHERE d.day = $1`,
+    [day],
+  );
+  return rows[0]?.count ?? 0;
+}
+
 export interface StreakState {
   current: number;
   best: number;

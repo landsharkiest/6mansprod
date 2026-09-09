@@ -56,3 +56,11 @@ export async function findUserById(id: number): Promise<UserRow | null> {
   );
   return rows[0] ?? null;
 }
+
+export async function findUserByDiscordId(discordId: string): Promise<UserRow | null> {
+  const { rows } = await pool.query<UserRow>(
+    'SELECT id, discord_id, username, avatar_hash, is_admin FROM users WHERE discord_id = $1',
+    [discordId],
+  );
+  return rows[0] ?? null;
+}

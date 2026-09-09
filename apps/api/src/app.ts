@@ -19,6 +19,7 @@ import { uploadsRouter } from './routes/uploads.js';
 import { adminRouter } from './routes/admin.js';
 import { challengesRouter } from './routes/challenges.js';
 import { blitzRouter } from './routes/blitz.js';
+import { botRouter } from './routes/bot.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -139,6 +140,9 @@ export function createApp(): express.Express {
   });
 
   const uploadLimiter = rateLimit({ windowMs: 60 * 60_000, limit: 30, standardHeaders: true, legacyHeaders: false });
+  // Server-to-server, not per-browser-session, so this is generous compared to uploadLimiter —
+  // it's a backstop against a misbehaving bot process, not real per-user throttling.
+  const botLimiter = rateLimit({ windowMs: 60_000, limit: 120, standardHeaders: true, legacyHeaders: false });
 
   app.use('/api/auth', authRouter);
   app.use('/api', gameRouter);
@@ -149,6 +153,7 @@ export function createApp(): express.Express {
   app.use('/api/admin', adminRouter);
   app.use('/api/challenges', challengesRouter);
   app.use('/api/blitz', blitzRouter);
+  app.use('/api/bot', botLimiter, botRouter);
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
