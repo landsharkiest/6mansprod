@@ -179,8 +179,9 @@ describe('GameBoard', () => {
         initialResult={{ correct: true, guessedRank: 'S', actualRank: 'S', distance: 0, stats: stats(), counted: true, newAchievements: [] }}
       />,
     );
-    const status = screen.getByRole('status');
+    // The clip player has its own loading status region, so find the verdict by its text.
+    const status = screen.getByText('Correct!').closest('[role="status"]');
+    expect(status).not.toBeNull();
     expect(status).toHaveAttribute('aria-live', 'polite');
-    expect(status).toHaveTextContent('Correct!');
   });
 });
