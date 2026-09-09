@@ -23,7 +23,10 @@ echo "at $(sudo -u $APP_USER git -C "$REPO_DIR" rev-parse --short HEAD)"
 sudo -u $APP_USER bash -c "cd '$REPO_DIR' && npm ci --omit=dev --workspace apps/api --workspace packages/shared --include-workspace-root --no-audit --no-fund"
 
 install -m 644 "$REPO_DIR/infra/6mansdle-api.service" /etc/systemd/system/6mansdle-api.service
-install -m 644 "$REPO_DIR/infra/nginx-backend.conf" /etc/nginx/conf.d/6mansdle-backend.conf
+# certbot rewrites this file to add TLS, so only seed it on first deploy.
+if [ ! -f /etc/nginx/conf.d/6mansdle-backend.conf ]; then
+  install -m 644 "$REPO_DIR/infra/nginx-backend.conf" /etc/nginx/conf.d/6mansdle-backend.conf
+fi
 nginx -t
 systemctl daemon-reload
 systemctl enable 6mansdle-api >/dev/null
