@@ -76,12 +76,16 @@ export interface AdminClipRow {
   uploader_id: number | null;
   uploader_name: string | null;
   hidden: boolean;
+  submitted_player: string | null;
+  player_id: number | null;
+  player_name: string | null;
 }
 
 export const ADMIN_CLIP_SELECT = `
   SELECT c.id, c.s3_key, c.rank, c.status, c.original_filename, c.content_type, c.size_bytes,
-         c.created_at, c.reviewed_at, c.uploader_id, u.username AS uploader_name, c.hidden
-    FROM clips c LEFT JOIN users u ON u.id = c.uploader_id`;
+         c.created_at, c.reviewed_at, c.uploader_id, u.username AS uploader_name, c.hidden,
+         c.submitted_player, c.player_id, pl.name AS player_name
+    FROM clips c LEFT JOIN users u ON u.id = c.uploader_id LEFT JOIN players pl ON pl.id = c.player_id`;
 
 export async function toAdminClip(r: AdminClipRow & { uploader_approved?: number; uploader_rejected?: number }): Promise<AdminClip> {
   return {
@@ -96,6 +100,8 @@ export async function toAdminClip(r: AdminClipRow & { uploader_approved?: number
     uploader: r.uploader_id !== null ? { id: r.uploader_id, username: r.uploader_name ?? 'unknown' } : null,
     videoUrl: await playbackUrl(r.s3_key),
     hidden: r.hidden,
+    submittedPlayer: r.submitted_player,
+    player: r.player_id !== null ? { id: r.player_id, name: r.player_name ?? 'unknown' } : null,
     ...(r.uploader_approved !== undefined || r.uploader_rejected !== undefined
       ? { uploaderStats: { approved: r.uploader_approved ?? 0, rejected: r.uploader_rejected ?? 0 } }
       : {}),
@@ -107,9 +113,10 @@ export async function toAdminClip(r: AdminClipRow & { uploader_approved?: number
 export const ADMIN_CLIP_SELECT_WITH_UPLOADER_STATS = `
   SELECT c.id, c.s3_key, c.rank, c.status, c.original_filename, c.content_type, c.size_bytes,
          c.created_at, c.reviewed_at, c.uploader_id, u.username AS uploader_name, c.hidden,
+         c.submitted_player, c.player_id, pl.name AS player_name,
          (SELECT COUNT(*)::int FROM clips c2 WHERE c2.uploader_id = c.uploader_id AND c2.status = 'approved') AS uploader_approved,
          (SELECT COUNT(*)::int FROM clips c2 WHERE c2.uploader_id = c.uploader_id AND c2.status = 'rejected') AS uploader_rejected
-    FROM clips c LEFT JOIN users u ON u.id = c.uploader_id`;
+    FROM clips c LEFT JOIN users u ON u.id = c.uploader_id LEFT JOIN players pl ON pl.id = c.player_id`;
 
 export async function clipStats(db: Queryable, clip: Pick<ClipRow, 'id' | 'rank'>): Promise<ClipStats> {
   const { rows } = await db.query<{ guessed_rank: Rank; count: number }>(

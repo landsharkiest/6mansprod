@@ -21,7 +21,7 @@ export function AdminPage() {
   return (
     <div className="page container">
       <h1 className="page-title">Admin</h1>
-      <p className="page-subtitle">Confirm the rank is right and the clip is fair before approving.</p>
+      <p className="page-subtitle">Confirm the rank (and player, if given) is right and the clip is fair before approving.</p>
 
       <div className="tabs" role="tablist">
         <button role="tab" className={`tab ${section === 'dashboard' ? 'active' : ''}`} onClick={() => setSection('dashboard')}>
@@ -72,6 +72,8 @@ function ClipsSection() {
   const [busy, setBusy] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [ranks, setRanks] = useState<Record<string, Rank>>({});
+  const [players, setPlayers] = useState<Record<string, string>>({});
+  const [knownPlayers, setKnownPlayers] = useState<string[]>([]);
   const [approvingAll, setApprovingAll] = useState(false);
 
   const load = useCallback(() => {
@@ -81,25 +83,42 @@ function ClipsSection() {
       .then((cs) => {
         setClips(cs);
         setRanks(Object.fromEntries(cs.map((c) => [c.id, c.rank])));
+        setPlayers(Object.fromEntries(cs.map((c) => [c.id, c.player?.name ?? c.submittedPlayer ?? ''])));
         setActiveIndex(0);
       })
       .catch(() => setClips([]));
   }, [status]);
 
   useEffect(load, [load]);
+  useEffect(() => {
+    api.adminPlayers().then((ps) => setKnownPlayers(ps.map((p) => p.name))).catch(() => undefined);
+  }, [status]);
+
+  /** The player field as a review/patch value: blank means "no player". */
+  const playerFor = useCallback((clip: AdminClip): string | null => players[clip.id]?.trim() || null, [players]);
 
   const review = useCallback(
     async (clip: AdminClip, verdict: 'approved' | 'rejected', rank?: Rank) => {
       setBusy(clip.id);
       try {
-        await api.reviewClip(clip.id, verdict, rank);
+        await api.reviewClip(clip.id, verdict, rank, verdict === 'approved' ? playerFor(clip) : undefined);
         setClips((cs) => cs?.filter((c) => c.id !== clip.id) ?? null);
       } finally {
         setBusy(null);
       }
     },
-    [],
+    [playerFor],
   );
+
+  const savePlayer = async (clip: AdminClip) => {
+    setBusy(clip.id);
+    try {
+      const updated = await api.patchClip(clip.id, { playerName: playerFor(clip) });
+      setClips((cs) => cs?.map((c) => (c.id === clip.id ? updated : c)) ?? null);
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const remove = async (clip: AdminClip) => {
     if (!window.confirm('Permanently delete this rejected clip and its file?')) return;
@@ -118,7 +137,7 @@ function ClipsSection() {
     setApprovingAll(true);
     try {
       for (const clip of clips) {
-        await api.reviewClip(clip.id, 'approved');
+        await api.reviewClip(clip.id, 'approved', undefined, clip.submittedPlayer ?? undefined);
       }
       load();
     } finally {
@@ -188,6 +207,11 @@ function ClipsSection() {
         <p className="center muted">Nothing {status} right now.</p>
       ) : (
         <div className="review-grid">
+          <datalist id="known-players">
+            {knownPlayers.map((n) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
           {clips.map((clip, i) => (
             <ReviewCard
               key={clip.id}
@@ -195,6 +219,9 @@ function ClipsSection() {
               busy={busy === clip.id}
               active={i === activeIndex}
               rank={ranks[clip.id] ?? clip.rank}
+              player={players[clip.id] ?? ''}
+              onPlayerChange={(p) => setPlayers((ps) => ({ ...ps, [clip.id]: p }))}
+              onSavePlayer={savePlayer}
               onFocus={() => setActiveIndex(i)}
               onRankChange={(rank) => setRanks((rs) => ({ ...rs, [clip.id]: rank }))}
               onReview={review}
@@ -212,8 +239,11 @@ function ReviewCard({
   busy,
   active,
   rank,
+  player,
   onFocus,
   onRankChange,
+  onPlayerChange,
+  onSavePlayer,
   onReview,
   onDelete,
 }: {
@@ -221,8 +251,11 @@ function ReviewCard({
   busy: boolean;
   active: boolean;
   rank: Rank;
+  player: string;
   onFocus: () => void;
   onRankChange: (rank: Rank) => void;
+  onPlayerChange: (player: string) => void;
+  onSavePlayer: (clip: AdminClip) => Promise<void>;
   onReview: (clip: AdminClip, verdict: 'approved' | 'rejected', rank?: Rank) => Promise<void>;
   onDelete: (clip: AdminClip) => Promise<void>;
 }) {
@@ -249,6 +282,27 @@ function ReviewCard({
             Uploader: {stats.approved} approved / {stats.rejected} rejected
           </div>
         )}
+        <div>
+          Player: {clip.submittedPlayer ? <>uploader says <b>{clip.submittedPlayer}</b></> : 'none suggested'}
+          {clip.player && <> · verified <span className="pill">{clip.player.name}</span></>}
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+          <input
+            type="text"
+            list="known-players"
+            aria-label="Verified player"
+            placeholder="Verified player (blank = none)"
+            maxLength={64}
+            value={player}
+            onChange={(e) => onPlayerChange(e.target.value)}
+            style={{ flex: 1, minWidth: 0, padding: '6px 10px' }}
+          />
+          {clip.status === 'approved' && (
+            <button className="btn btn-ghost" disabled={busy || player.trim() === (clip.player?.name ?? '')} onClick={() => void onSavePlayer(clip)}>
+              Save player
+            </button>
+          )}
+        </div>
       </div>
       <div className="review-actions">
         {clip.status !== 'approved' && (

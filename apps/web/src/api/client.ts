@@ -36,6 +36,9 @@ import type {
   ResolveReportAction,
   ResolveReportResponse,
   UserProfile,
+  WhoGuessRequest,
+  WhoGuessResponse,
+  WhoPlayer,
 } from '@6mansdle/shared';
 
 const API_BASE = import.meta.env.VITE_API_ORIGIN ?? '';
@@ -86,13 +89,20 @@ export const api = {
     request<PresignUploadResponse>('/api/uploads/presign', { method: 'POST', body: JSON.stringify(body) }),
   completeUpload: (clipId: string) => request<{ clipId: string }>(`/api/uploads/${clipId}/complete`, { method: 'POST' }),
   myUploads: () =>
-    request<Array<{ id: string; rank: Rank; status: ClipStatus; originalFilename: string; createdAt: string }>>(
+    request<Array<{ id: string; rank: Rank; status: ClipStatus; originalFilename: string; createdAt: string; player: string | null }>>(
       '/api/uploads/mine',
     ),
 
   adminClips: (status: ClipStatus) => request<AdminClip[]>(`/api/admin/clips?status=${status}`),
-  reviewClip: (id: string, status: 'approved' | 'rejected', rank?: Rank) =>
-    request<AdminClip>(`/api/admin/clips/${id}/review`, { method: 'POST', body: JSON.stringify({ status, rank }) }),
+  reviewClip: (id: string, status: 'approved' | 'rejected', rank?: Rank, playerName?: string | null) =>
+    request<AdminClip>(`/api/admin/clips/${id}/review`, { method: 'POST', body: JSON.stringify({ status, rank, playerName }) }),
+  adminPlayers: () => request<Array<WhoPlayer & { clipCount: number }>>('/api/admin/players'),
+
+  whoClip: (exclude?: string) =>
+    request<PlayableClip>(`/api/who/clips/random${exclude ? `?exclude=${encodeURIComponent(exclude)}` : ''}`),
+  whoPlayers: () => request<WhoPlayer[]>('/api/who/players'),
+  whoGuess: (body: WhoGuessRequest) =>
+    request<WhoGuessResponse>('/api/who/guesses', { method: 'POST', body: JSON.stringify(body) }),
   deleteClip: (id: string) => request<void>(`/api/admin/clips/${id}`, { method: 'DELETE' }),
   patchClip: (id: string, body: PatchClipRequest) =>
     request<AdminClip>(`/api/admin/clips/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),

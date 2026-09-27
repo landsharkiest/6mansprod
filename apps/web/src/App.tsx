@@ -11,6 +11,7 @@ import type { ReactElement } from 'react';
 // stays a static import since it's what every visitor loads first.
 const PlayPage = lazy(() => import('./pages/PlayPage').then((m) => ({ default: m.PlayPage })));
 const BlitzPage = lazy(() => import('./pages/BlitzPage').then((m) => ({ default: m.BlitzPage })));
+const WhoPage = lazy(() => import('./pages/WhoPage').then((m) => ({ default: m.WhoPage })));
 const DailyPage = lazy(() => import('./pages/DailyPage').then((m) => ({ default: m.DailyPage })));
 const ChallengePage = lazy(() => import('./pages/ChallengePage').then((m) => ({ default: m.ChallengePage })));
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then((m) => ({ default: m.LeaderboardPage })));
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/play" element={<PlayPage />} />
           <Route path="/blitz" element={<BlitzPage />} />
+          <Route path="/who" element={<WhoPage />} />
           <Route path="/daily" element={<DailyPage />} />
           <Route path="/c/:token" element={<ChallengePage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />

@@ -86,6 +86,9 @@ export function HomePage() {
           <Link to="/play" className="btn btn-lg">
             Endless mode
           </Link>
+          <Link to="/who" className="btn btn-lg">
+            Who's that player?
+          </Link>
           {!user && (
             <a href={api.loginUrl} className="btn btn-blurple btn-lg">
               <DiscordIcon /> Sign in with Discord
@@ -107,6 +110,10 @@ export function HomePage() {
         <div className="card">
           <h3>Endless mode</h3>
           <p>Random approved clips, as many as you like. See how the community guessed after every round.</p>
+        </div>
+        <div className="card">
+          <h3>Who's that player?</h3>
+          <p>Think you know the regulars? Watch a clip and name the 6mans player behind the car.</p>
         </div>
         <div className="card">
           <h3>Submit clips</h3>

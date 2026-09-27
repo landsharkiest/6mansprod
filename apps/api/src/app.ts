@@ -20,6 +20,7 @@ import { adminRouter } from './routes/admin.js';
 import { challengesRouter } from './routes/challenges.js';
 import { blitzRouter } from './routes/blitz.js';
 import { botRouter } from './routes/bot.js';
+import { whoRouter } from './routes/who.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -153,6 +154,7 @@ export function createApp(): express.Express {
   app.use('/api/admin', adminRouter);
   app.use('/api/challenges', challengesRouter);
   app.use('/api/blitz', blitzRouter);
+  app.use('/api/who', whoRouter);
   app.use('/api/bot', botLimiter, botRouter);
 
   app.use((_req, res) => res.status(404).json({ error: 'Not found' }));

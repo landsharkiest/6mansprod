@@ -18,6 +18,8 @@ import { reportsRouter } from './reports.js';
 import { awardContributor } from '../services/achievements.js';
 import { loadDashboard } from '../services/dashboard.js';
 import { TtlCache } from '../services/ttlCache.js';
+import { listAllPlayers, playerNameSchema, upsertPlayer } from '../services/players.js';
+import type { Queryable } from '../db/pool.js';
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -58,17 +60,36 @@ adminRouter.get(
   }),
 );
 
+/** A name sets (creating the player if new), null clears, absent leaves the player alone. */
+const playerNameField = playerNameSchema.nullable().optional();
+
+/** Applies a playerName field to a clip. No-op when the field was left out. */
+async function applyPlayer(db: Queryable, clipId: string, playerName: string | null | undefined): Promise<void> {
+  if (playerName === undefined) return;
+  const playerId = playerName === null ? null : await upsertPlayer(db, playerName);
+  await db.query('UPDATE clips SET player_id = $2 WHERE id = $1', [clipId, playerId]);
+}
+
+adminRouter.get(
+  '/players',
+  asyncHandler(async (_req, res) => {
+    res.json(await listAllPlayers());
+  }),
+);
+
 const reviewSchema = z.object({
   status: z.enum(['approved', 'rejected']),
   /** Admins may correct the rank while approving. */
   rank: z.enum(RANKS).optional(),
+  /** Admins verify (or correct/clear) the uploader's suggested player while approving. */
+  playerName: playerNameField,
 });
 
 adminRouter.post(
   '/clips/:id/review',
   asyncHandler(async (req, res) => {
     const id = z.string().uuid().parse(req.params.id);
-    const { status, rank } = parseBody(req, reviewSchema);
+    const { status, rank, playerName } = parseBody(req, reviewSchema);
 
     const full = await withTransaction(async (client) => {
       const { rows } = await client.query<AdminClipRow>(
@@ -79,6 +100,7 @@ adminRouter.post(
         [id, status, rank ?? null, req.user!.id],
       );
       if (!rows[0]) throw notFound('Clip not found');
+      await applyPlayer(client, id, playerName);
       if (status === 'approved' && rows[0].uploader_id !== null) {
         await awardContributor(client, rows[0].uploader_id);
       }
@@ -94,22 +116,26 @@ const patchClipSchema = z
     rank: z.enum(RANKS).optional(),
     /** Manual hide/unhide, independent of the auto-hide safeguard's open-report count. */
     hidden: z.boolean().optional(),
+    playerName: playerNameField,
   })
-  .refine((v) => v.rank !== undefined || v.hidden !== undefined, 'Provide rank or hidden');
+  .refine((v) => v.rank !== undefined || v.hidden !== undefined || v.playerName !== undefined, 'Provide rank, hidden or playerName');
 
 /** Quick-action patch used by the dashboard: fix a rank and/or toggle hidden without a full review. */
 adminRouter.patch(
   '/clips/:id',
   asyncHandler(async (req, res) => {
     const id = z.string().uuid().parse(req.params.id);
-    const { rank, hidden } = parseBody(req, patchClipSchema);
-    const { rows } = await pool.query<{ id: string }>(
-      `UPDATE clips SET rank = COALESCE($2, rank), hidden = COALESCE($3, hidden)
-        WHERE id = $1 AND upload_completed
-        RETURNING id`,
-      [id, rank ?? null, hidden ?? null],
-    );
-    if (!rows[0]) throw notFound('Clip not found');
+    const { rank, hidden, playerName } = parseBody(req, patchClipSchema);
+    await withTransaction(async (client) => {
+      const { rows } = await client.query<{ id: string }>(
+        `UPDATE clips SET rank = COALESCE($2, rank), hidden = COALESCE($3, hidden)
+          WHERE id = $1 AND upload_completed
+          RETURNING id`,
+        [id, rank ?? null, hidden ?? null],
+      );
+      if (!rows[0]) throw notFound('Clip not found');
+      await applyPlayer(client, id, playerName);
+    });
     const { rows: fullRows } = await pool.query<AdminClipRow>(`${selectClip} WHERE c.id = $1`, [id]);
     res.json(await toAdminClip(fullRows[0]!));
   }),

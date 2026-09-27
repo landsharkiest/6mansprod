@@ -4,6 +4,9 @@ import { pool } from '../../src/db/pool.js';
 // sessions from one test never bleed into the next.
 const TABLES = [
   'guesses',
+  'player_guesses',
+  'user_player_stats',
+  'players',
   'blitz_runs',
   'daily_challenges',
   'user_daily_stats',

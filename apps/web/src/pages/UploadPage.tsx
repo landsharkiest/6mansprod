@@ -14,6 +14,8 @@ interface Row {
   id: string;
   file: File;
   rank: Rank;
+  /** Optional: who's in the clip, for "Who's that player?". An admin verifies it. */
+  player: string;
   status: RowStatus;
   progress: number;
   error: string | null;
@@ -54,6 +56,7 @@ export function UploadPage() {
         id: `row-${nextRowId}`,
         file,
         rank: rankFromFilename(file.name) ?? lastRank,
+        player: '',
         status: 'queued',
         progress: 0,
         error: null,
@@ -74,6 +77,8 @@ export function UploadPage() {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, rank } : r)));
   };
 
+  const setRowPlayer = (id: string, player: string) => setRows((rs) => rs.map((r) => (r.id === id ? { ...r, player } : r)));
+
   const removeRow = (id: string) => setRows((rs) => rs.filter((r) => r.id !== id));
 
   const uploadOne = useCallback(async (row: Row): Promise<void> => {
@@ -84,6 +89,7 @@ export function UploadPage() {
         contentType: row.file.type,
         sizeBytes: row.file.size,
         rank: row.rank,
+        ...(row.player.trim() ? { playerName: row.player.trim() } : {}),
       });
       await uploadToS3(uploadUrl, headers, row.file, (pct) =>
         setRows((rs) => rs.map((r) => (r.id === row.id ? { ...r, progress: pct } : r))),
@@ -157,6 +163,9 @@ export function UploadPage() {
           <div style={{ fontSize: '0.78rem', marginTop: 4 }}>
             Name a file like <code>B+_clip.mp4</code> or <code>S_ranked.mp4</code> to pre-fill its rank.
           </div>
+          <div style={{ fontSize: '0.78rem', marginTop: 4 }}>
+            Know who's playing? Add their name and the clip can also appear in <b>Who's that player?</b>
+          </div>
         </div>
 
         {message && <div className={`notice ${message.kind === 'error' ? 'error' : ''}`} style={{ marginTop: 16 }}>{message.text}</div>}
@@ -169,6 +178,7 @@ export function UploadPage() {
                   key={row.id}
                   row={row}
                   onRankChange={(rank) => setRowRank(row.id, rank)}
+                  onPlayerChange={(player) => setRowPlayer(row.id, player)}
                   onRetry={() => void retryRow(row)}
                   onRemove={() => removeRow(row.id)}
                 />
@@ -197,6 +207,7 @@ export function UploadPage() {
                 <tr>
                   <th>File</th>
                   <th>Rank</th>
+                  <th>Player</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -207,6 +218,7 @@ export function UploadPage() {
                     <td>
                       <span className="pill">{c.rank}</span>
                     </td>
+                    <td>{c.player ?? <span className="muted">—</span>}</td>
                     <td>
                       <span className={`status ${c.status}`}>{c.status}</span>
                     </td>
@@ -224,11 +236,13 @@ export function UploadPage() {
 function UploadRowItem({
   row,
   onRankChange,
+  onPlayerChange,
   onRetry,
   onRemove,
 }: {
   row: Row;
   onRankChange: (rank: Rank) => void;
+  onPlayerChange: (player: string) => void;
   onRetry: () => void;
   onRemove: () => void;
 }) {
@@ -253,6 +267,16 @@ function UploadRowItem({
           </option>
         ))}
       </select>
+
+      <input
+        type="text"
+        aria-label={`Player in ${row.file.name} (optional)`}
+        placeholder="Player (optional)"
+        maxLength={64}
+        value={row.player}
+        disabled={row.status === 'uploading' || row.status === 'done'}
+        onChange={(e) => onPlayerChange(e.target.value)}
+      />
 
       <div className="upload-row-progress">
         {row.status === 'uploading' || row.status === 'done' ? (

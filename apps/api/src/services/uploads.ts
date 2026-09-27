@@ -5,6 +5,7 @@ import { RANKS } from '@6mansdle/shared';
 import { config } from '../config.js';
 import { pool } from '../db/pool.js';
 import { badRequest, notFound } from '../lib/errors.js';
+import { playerNameSchema } from './players.js';
 import { ALLOWED_VIDEO_TYPES, clipKey, headObject, presignUpload } from './storage.js';
 
 /**
@@ -16,6 +17,7 @@ export const presignInputSchema = z.object({
   contentType: z.string().refine((t) => t in ALLOWED_VIDEO_TYPES, 'Unsupported video type'),
   sizeBytes: z.number().int().positive(),
   rank: z.enum(RANKS),
+  playerName: playerNameSchema.optional(),
 });
 export type PresignInput = z.output<typeof presignInputSchema>;
 
@@ -30,9 +32,9 @@ export async function createPresignedUpload(uploaderId: number, input: PresignIn
   const clipId = randomUUID();
   const key = clipKey(clipId, input.contentType);
   await pool.query(
-    `INSERT INTO clips (id, s3_key, rank, original_filename, content_type, size_bytes, uploader_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [clipId, key, input.rank, input.filename, input.contentType, input.sizeBytes, uploaderId],
+    `INSERT INTO clips (id, s3_key, rank, original_filename, content_type, size_bytes, uploader_id, submitted_player)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [clipId, key, input.rank, input.filename, input.contentType, input.sizeBytes, uploaderId, input.playerName ?? null],
   );
   const { url, headers } = await presignUpload(key, input.contentType, input.sizeBytes);
   return { clipId, uploadUrl: url, headers };
@@ -69,13 +71,17 @@ export interface UploadSummary {
   status: string;
   originalFilename: string;
   createdAt: string;
+  /** Verified player name if an admin set one, otherwise what the uploader typed. */
+  player: string | null;
 }
 
 /** The given uploader's own uploads and their review state, newest first. */
 export async function listUploadsForUser(uploaderId: number): Promise<UploadSummary[]> {
   const { rows } = await pool.query<UploadSummary>(
-    `SELECT id, rank, status, original_filename AS "originalFilename", created_at AS "createdAt"
-       FROM clips WHERE uploader_id = $1 AND upload_completed ORDER BY created_at DESC LIMIT 50`,
+    `SELECT c.id, c.rank, c.status, c.original_filename AS "originalFilename", c.created_at AS "createdAt",
+            COALESCE(p.name, c.submitted_player) AS player
+       FROM clips c LEFT JOIN players p ON p.id = c.player_id
+      WHERE c.uploader_id = $1 AND c.upload_completed ORDER BY c.created_at DESC LIMIT 50`,
     [uploaderId],
   );
   return rows;

@@ -43,6 +43,9 @@ export function Layout() {
             <NavLink to="/blitz" className="nav-link">
               Blitz
             </NavLink>
+            <NavLink to="/who" className="nav-link">
+              Who's that?
+            </NavLink>
             <NavLink to="/leaderboard" className="nav-link">
               Leaderboard
             </NavLink>

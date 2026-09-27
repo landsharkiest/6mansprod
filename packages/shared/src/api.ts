@@ -272,6 +272,8 @@ export interface PresignUploadRequest {
   contentType: string;
   sizeBytes: number;
   rank: Rank;
+  /** Optional: who the uploader says is in the clip. An admin verifies it before it's used. */
+  playerName?: string;
 }
 
 export interface PresignUploadResponse {
@@ -297,6 +299,10 @@ export interface AdminClip {
   /** The uploader's approved/rejected clip counts, for spotting spam in the review queue. Only
    * populated on the admin clip list (and only when the clip has an uploader). */
   uploaderStats?: { approved: number; rejected: number };
+  /** What the uploader typed as the player, unverified. */
+  submittedPlayer: string | null;
+  /** The admin-verified player; only clips with one are served in "Who's that player?". */
+  player: WhoPlayer | null;
 }
 
 export interface ApiError {
@@ -308,6 +314,8 @@ export interface ApiError {
 export interface PatchClipRequest {
   rank?: Rank;
   hidden?: boolean;
+  /** Set (by name; created if new) or, with null, clear the verified player. */
+  playerName?: string | null;
 }
 
 export interface DashboardCounts {
@@ -552,4 +560,40 @@ export interface BlitzLeaderboardResponse {
 
 export interface BlitzMeBestResponse {
   best: BlitzRunSummary | null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// "Who's that player?": guess which known 6mans player is in the clip. Clips enter this mode
+// only once an admin has verified the uploader's suggested player.
+// ---------------------------------------------------------------------------------------------
+
+export interface WhoPlayer {
+  id: number;
+  name: string;
+}
+
+export interface WhoGuessRequest {
+  clipId: string;
+  playerId: number;
+}
+
+export interface WhoGuessCount {
+  player: WhoPlayer;
+  count: number;
+}
+
+export interface WhoGuessResponse {
+  correct: boolean;
+  guessedPlayer: WhoPlayer;
+  actualPlayer: WhoPlayer;
+  /** The clip's rank, shown as a bonus fact on the reveal. */
+  actualRank: Rank;
+  /** False when the user had already guessed this clip: recorded, but not counted toward the run. */
+  counted: boolean;
+  /** Present for signed-in users. */
+  run?: { current: number; best: number };
+  totalGuesses: number;
+  accuracy: number;
+  /** Most common guesses on this clip, most popular first. */
+  topGuesses: WhoGuessCount[];
 }

@@ -41,6 +41,16 @@ queue. Admins (Discord ids in `ADMIN_DISCORD_IDS`) approve, correct the rank, re
 The browser never holds AWS credentials. Remove the old Cognito identity pool's unauthenticated S3 write
 policy once the old site is retired.
 
+## Who's that player?
+
+A second game mode at `/who`: watch a clip and name the 6mans player in it. Uploaders can optionally type who's in
+a clip (`clips.submitted_player`, free text). On `/admin` the reviewer sees that suggestion prefilled in a
+"Verified player" field (with autocomplete from existing players), and approving links the clip to a canonical
+`players` row (matched case-insensitively, created if new). Only approved, visible clips with a verified
+`player_id` are served in this mode; blank the field to pull a clip out of it. Guesses live in `player_guesses`
+and runs in `user_player_stats`, so rank-mode stats and leaderboards are untouched. The player picker lists
+every player that has a playable clip, which is the same for every clip, so it doesn't leak the answer.
+
 ## Achievements
 
 Badges live in `packages/shared/src/achievements.ts` — a plain data array (id, name, description, emoji,
